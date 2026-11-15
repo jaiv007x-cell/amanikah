@@ -87,6 +87,7 @@
     pausedLabel = pausedLabel || "▶ Play video";
     playingLabel = playingLabel || "❚❚ Pause video";
     if (v.paused) {
+      if (v.ended) v.currentTime = 0;
       var p = v.play();
       if (p) {
         p.then(function () {
@@ -142,41 +143,16 @@
     }
   })();
 
-  try {
-    var visibilityObs = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.target !== hero) return;
-        if (!e.isIntersecting) {
-          hero.pause();
-          return;
-        }
-        if (reduced || saveData) return;
-        hero.play().then(function () {
-          if (heroPause) {
-            heroPause.textContent = "❚❚";
-            heroPause.setAttribute("aria-pressed", "true");
-          }
-        }).catch(function () {
-          if (heroPause) {
-            heroPause.textContent = "▶";
-            heroPause.setAttribute("aria-pressed", "false");
-          }
-        });
-      });
-    }, { threshold: 0.25 });
-    visibilityObs.observe(hero);
-  } catch (obsErr) {}
+  // Deliberately no automatic hero playback: visitor controls the film.
 
   function setMovie(src) {
     var current = scene.querySelector("source");
     if (!current) return;
     if (current.getAttribute("src") === src) return;
-    var wasPlaying = !scene.paused;
     current.setAttribute("src", src);
+    scene.pause();
     scene.load();
-    if (wasPlaying && !reduced && !saveData) {
-      scene.play().catch(function () {});
-    }
+    if (scenePause) { scenePause.textContent = "▶ Play video"; scenePause.setAttribute("aria-pressed", "false"); }
   }
 
   function addOption(label, cb, i) {
@@ -276,19 +252,11 @@
     hero.pause();
     scene.muted = true;
     if (scenePause) {
-      scenePause.textContent = "❚❚ Pause scene";
-      scenePause.setAttribute("aria-pressed", "true");
+      scenePause.textContent = "▶ Play scene";
+      scenePause.setAttribute("aria-pressed", "false");
     }
     render();
     by("storyClose").focus();
-    if (!reduced && !saveData) {
-      scene.play().catch(function () {
-        if (scenePause) {
-          scenePause.textContent = "▶ Play video";
-          scenePause.setAttribute("aria-pressed", "false");
-        }
-      });
-    }
     track("film_open", {});
     try { document.dispatchEvent(new CustomEvent("amanikah:film-open")); } catch (e3) {}
   }
@@ -298,9 +266,7 @@
     scene.pause();
     document.body.style.overflow = "";
     if (originalFocus && originalFocus.focus) originalFocus.focus();
-    if (!reduced && !saveData && hero.getBoundingClientRect().bottom > 0) {
-      hero.play().catch(function () {});
-    }
+    // Closing the dialogue never restarts the hero automatically.
   }
 
   document.querySelectorAll("[data-open-film]").forEach(function (n) {
@@ -351,14 +317,14 @@
     var speed = by("storySpeed");
     var replay = by("storyReplay");
     var vids = [hero, scene].filter(Boolean);
-    var calm = true;
+    var calm = false;
     var pausePref = false;
     try { pausePref = localStorage.getItem("amanikah.film.pausePref") === "1"; } catch (ePref) {}
     function setPace() {
       vids.forEach(function (v) {
         try {
           v.loop = false;
-          v.playbackRate = calm ? 0.75 : 1;
+          v.playbackRate = calm ? 0.9 : 1;
         } catch (e) {}
       });
     }
