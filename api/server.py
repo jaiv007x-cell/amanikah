@@ -22,6 +22,8 @@ from urllib import error as urlerror
 from urllib import request as urlrequest
 from urllib.parse import parse_qs, urlparse
 
+from private_features import PrivateFeatures
+
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 LEAD_STATUSES = ("new", "contacted", "qualified", "converted", "closed")
 TICKET_STATUSES = ("new", "acknowledged", "in_progress", "resolved", "closed")
@@ -665,6 +667,8 @@ class Store:
         return 200, {"ok": True, "member": self.public_member(member_id)}
 
     def withdraw_consent(self, member_id):
+        if hasattr(self, "private_features"):
+            self.private_features.purge_member(member_id)
         self.conn.execute("UPDATE consents SET withdrawn=1, updated_at=? WHERE member_id=?", (utcnow(), member_id))
         self.conn.execute("UPDATE profiles SET visibility='private' WHERE member_id=?", (member_id,))
         self.conn.commit()
@@ -672,6 +676,8 @@ class Store:
         return 200, {"ok": True, "withdrawn": True}
 
     def delete_account(self, member_id):
+        if hasattr(self, "private_features"):
+            self.private_features.purge_member(member_id)
         now = utcnow()
         self.conn.execute("UPDATE members SET deleted_at=?, email=?, password_hash='', updated_at=? WHERE id=?", (now, f"deleted-{member_id}@amanikah.invalid", now, member_id))
         self.conn.execute("UPDATE profiles SET display_name='Deleted member', intentions='', city='', visibility='private' WHERE member_id=?", (member_id,))
@@ -949,6 +955,7 @@ class Store:
 
 class Handler(BaseHTTPRequestHandler):
     store: Store = None
+    private_features: PrivateFeatures = None
     limiter = RateLimiter(30, 60)
     admin_token = ""
 
@@ -1063,6 +1070,10 @@ class Handler(BaseHTTPRequestHandler):
         path = parsed.path.rstrip("/") or "/"
         qs = parse_qs(parsed.query)
         store = self.store
+
+        # Authenticated family/voice routes; never publicly expose audio.
+        if path.startswith("/api/amanikah/me/family") or path.startswith("/api/amanikah/me/voice"):
+            return self.private_features.route(self, method, path, write_body)
 
         # Public share page: return real HTTP 410 when the unlisted link was revoked.
         if method == "GET" and path == "/simple-nikah/share.html":
@@ -1294,6 +1305,8 @@ def main():
     mailer = Mailer(conf)
     store = Store(conf.get("AMANIKAH_DB", "/data/amanikah.sqlite"), pepper, mailer, conf)
     Handler.store = store
+    store.private_features = PrivateFeatures(store)
+    Handler.private_features = store.private_features
     Handler.admin_token = conf.get("OPS_ADMIN_TOKEN") or ""
     if not Handler.admin_token:
         raise SystemExit("OPS_ADMIN_TOKEN is required")
