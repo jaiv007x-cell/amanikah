@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Operator console — Amanikah</title>
+<link rel="stylesheet" href="/css/site.css">
+<style>
+  .ops-grid{display:grid;gap:16px}
+  @media(min-width:900px){.ops-grid{grid-template-columns:1fr 1fr}}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{border-bottom:1px solid rgba(18,63,53,.12);padding:8px;text-align:left;vertical-align:top}
+  .token-bar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 24px}
+  .token-bar input{flex:1;min-width:200px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#e8f2ef;font-size:12px}
+  .muted{opacity:.75}
+  select.inline{max-width:140px}
+</style>
+</head>
+<body class="no-dock">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="bar">
+    <a class="logo" href="/" aria-label="Amanikah">Amani<span>kah</span></a>
+    <nav class="nav" id="nav" aria-label="Primary">
+      <a href="/ops/" aria-current="page">Operator</a>
+      <a href="/account/">Accounts</a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="wrap" style="padding:32px 16px 64px">
+  <p class="kicker">Private</p>
+  <h1>Operator console</h1>
+  <p class="muted">Access requires the configured ops token. Demo membership data is never listed as production customers. Payments remain sandbox until services are deliverable.</p>
+  <div class="token-bar">
+    <label class="visually-hidden" for="opsToken">Ops token</label>
+    <input id="opsToken" type="password" placeholder="X-Ops-Token" autocomplete="off">
+    <button class="btn btn-emerald" type="button" id="loadBtn">Load console</button>
+    <button class="btn btn-ghost" type="button" id="clearBtn">Clear token</button>
+  </div>
+  <p class="status" id="opsStatus" role="status"></p>
+  <div id="dash" class="panel" hidden></div>
+  <section class="panel" id="funnelPanel" style="margin-top:24px" hidden>
+    <h2>Funnel (30 days)</h2>
+    <p class="muted">First-party event counts. Notifications are not customers. Sandbox payments are not revenue.</p>
+    <div id="funnel"></div>
+  </section>
+  <div class="ops-grid" style="margin-top:24px">
+    <section class="panel">
+      <h2>Leads</h2>
+      <div id="leads"></div>
+    </section>
+    <section class="panel">
+      <h2>Tickets</h2>
+      <div id="tickets"></div>
+    </section>
+    <section class="panel">
+      <h2>Introduction cases</h2>
+      <form id="caseForm" class="row" style="gap:8px;margin-bottom:12px">
+        <input name="leadId" placeholder="Lead id (optional)">
+        <input name="peerLabel" placeholder="Peer label" required>
+        <input name="notes" placeholder="Notes">
+        <button class="btn btn-emerald" type="submit">Open case</button>
+      </form>
+      <div id="cases"></div>
+    </section>
+    <section class="panel">
+      <h2>Verification requests</h2>
+      <form id="verForm" class="row" style="gap:8px;margin-bottom:12px">
+        <input name="memberId" placeholder="Member id (optional)">
+        <input name="claim" placeholder="Claim to verify" required>
+        <button class="btn btn-emerald" type="submit">Request verification</button>
+      </form>
+      <div id="vers"></div>
+    </section>
+    <section class="panel">
+      <h2>Fulfillment</h2>
+      <form id="fulForm" class="row" style="gap:8px;margin-bottom:12px">
+        <input name="serviceId" placeholder="Service id" required>
+        <input name="orderRef" placeholder="Sandbox order ref">
+        <input name="leadId" placeholder="Lead id">
+        <button class="btn btn-emerald" type="submit">Queue fulfillment</button>
+      </form>
+      <div id="fuls"></div>
+    </section>
+    <section class="panel">
+      <h2>Notifications / outbox</h2>
+      <div id="notes"></div>
+    </section>
+  </div>
+</main>
+<script src="/js/ops/console.js"></script>
+</body>
+</html>

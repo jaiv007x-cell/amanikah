@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discover Your Nikah Priorities — Amanikah</title>
+<meta name="description" content="A free, private Nikah Priorities quiz. Ten thoughtful themes, a personalized profile, and optional invite-to-compare — never a moral score or marriage prediction.">
+<meta name="theme-color" content="#123F35">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://amanikah.com/nikah-readiness/">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta property="og:locale" content="en_IN">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Amanikah">
+<meta property="og:url" content="https://amanikah.com/nikah-readiness/">
+<meta property="og:title" content="Discover Your Nikah Priorities — Amanikah">
+<meta property="og:description" content="A free, private quiz about the nikah you want. No moral score. No marriage prediction.">
+<meta property="og:image" content="https://amanikah.com/images/nikah-readiness-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Nikah Priorities Profile card from Amanikah">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Discover Your Nikah Priorities — Amanikah">
+<meta name="twitter:description" content="A free, private quiz about the nikah you want. No moral score. No marriage prediction.">
+<meta name="twitter:image" content="https://amanikah.com/images/nikah-readiness-og.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Source+Sans+3:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@500;600&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css?v=5">
+<link rel="stylesheet" href="/css/nikah-readiness.css?v=2">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Discover Your Nikah Priorities",
+  "url": "https://amanikah.com/nikah-readiness/",
+  "applicationCategory": "LifestyleApplication",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
+  "description": "A free private quiz that builds a Nikah Priorities Profile without scoring religious devotion or predicting marriage success."
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="nr-live" id="nr-live" aria-live="polite"></div>
+<header class="site-header">
+  <div class="bar">
+    <a class="logo" href="/" aria-label="Amanikah">Amani<span>kah</span></a>
+    <button class="menu" type="button" aria-expanded="false" aria-controls="nav" aria-label="Open menu">
+      <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><path d="M0 1h18M0 6h18M0 11h18" stroke="currentColor" stroke-width="1.4"/></svg>
+    </button>
+    <nav class="nav" id="nav" aria-label="Primary">
+      <a href="/simple-nikah/">#SimpleNikah</a>
+      <a href="/nikah-readiness/" aria-current="page">Quiz</a>
+      <a href="/pricing/">Pricing</a>
+      <a href="/#nri">NRI</a>
+      <a class="btn btn-gold" href="/signup.html">Find My Match</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+  <div id="nr-app">
+    <section class="nr-hero" id="nr-intro">
+      <div class="wrap nr-shell">
+        <div class="nr-banner" id="nr-invite-banner" hidden>
+          <p class="kicker">Invite</p>
+          <p data-invite-note></p>
+        </div>
+        <p class="kicker">Discover Your Nikah Priorities</p>
+        <h1>Name what you want a marriage to be — without a score.</h1>
+        <p class="lede">Ten thoughtful themes. A private Nikah Priorities Profile. Optional invite to compare with another adult. Your result is free. Paid matchmaking and verification are optional later — never a paywall for your own answers.</p>
+        <ul class="quiet" style="padding-left:1.2rem">
+          <li>No moral grade and no ranking of religious devotion</li>
+          <li>No claim to predict marriage success or psychological compatibility</li>
+          <li>Answers stay on this device unless you consent to carry a sanitized summary forward</li>
+        </ul>
+        <div class="nr-recover" id="nr-recover" hidden>
+          <p><strong>Saved answers found on this device.</strong> You can continue where you left off, open your profile, or start fresh.</p>
+          <div class="actions" style="margin-top:12px">
+            <button class="btn btn-emerald" id="nr-resume" type="button">Continue saved quiz</button>
+            <button class="btn btn-ghost" id="nr-open-saved" type="button">Open saved profile</button>
+            <a class="btn btn-ghost" href="/nikah-readiness/?fresh=1">Start fresh</a>
+          </div>
+        </div>
+        <div class="actions" style="margin-top:28px">
+          <button class="btn btn-emerald" id="nr-start" type="button">Begin the quiz</button>
+          <a class="btn btn-ghost" href="/simple-nikah/">Explore #SimpleNikah</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="nr-quiz" hidden>
+      <div class="wrap nr-shell">
+        <div class="nr-progress" aria-hidden="false">
+          <div class="nr-progress-track"><div class="nr-progress-fill" id="nr-progress-fill"></div></div>
+          <p class="nr-progress-text" id="nr-progress-text">Question 1 of 10</p>
+        </div>
+        <div class="nr-panel" id="nr-question-panel">
+          <p class="nr-theme" id="nr-theme"></p>
+          <h2 class="nr-prompt" id="nr-prompt"></h2>
+          <p class="nr-help" id="nr-help" hidden></p>
+          <p class="nr-note" id="nr-note" hidden></p>
+          <div class="nr-options" id="nr-options" role="group" aria-labelledby="nr-prompt"></div>
+          <div class="nr-nav">
+            <button class="btn btn-ghost" id="nr-back" type="button">Back</button>
+            <button class="btn btn-emerald" id="nr-next" type="button">Continue</button>
+          </div>
+          <p class="status" id="nr-status" role="status"></p>
+          <p class="quiet" style="margin-top:16px;font-size:0.9rem">Tip: on a phone you can swipe left/right. On a keyboard use the arrow keys.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="nr-results" hidden>
+      <div class="wrap nr-shell">
+        <div class="nr-progress">
+          <div class="nr-progress-track"><div class="nr-progress-fill" style="width:100%"></div></div>
+          <p class="nr-progress-text">Your private profile</p>
+        </div>
+        <div class="nr-panel">
+          <p class="kicker">Nikah Priorities Profile</p>
+          <h2>Your priorities, in your words</h2>
+          <p class="quiet">This summary is private on this device. It is not a compatibility score, character reference, or prediction of marriage success.</p>
+
+          <h3>Three strongest priorities</h3>
+          <ol class="nr-top3" id="nr-top3"></ol>
+
+          <div class="nr-profile-grid">
+            <article>
+              <h3>Preferred wedding style</h3>
+              <p id="nr-wedding"></p>
+            </article>
+            <article>
+              <h3>Expected family involvement</h3>
+              <p id="nr-family"></p>
+            </article>
+            <article>
+              <h3>Relocation flexibility</h3>
+              <p id="nr-relocate"></p>
+            </article>
+            <article>
+              <h3>Preferred next step</h3>
+              <p id="nr-nextstep"></p>
+            </article>
+          </div>
+
+          <h3>Discussion questions worth exploring</h3>
+          <ul class="nr-discuss" id="nr-discuss"></ul>
+
+          <div class="nr-card-preview" id="nr-card-preview" aria-live="polite"></div>
+
+          <div class="nr-actions">
+            <button class="btn btn-gold" id="nr-download" type="button">Download shareable image</button>
+            <button class="btn btn-ghost" id="nr-copy" type="button">Copy profile text</button>
+            <button class="btn btn-emerald" id="nr-wa" type="button">Share on WhatsApp</button>
+            <button class="btn btn-ghost" id="nr-native" type="button">Share…</button>
+          </div>
+
+          <div style="margin-top:28px">
+            <h3>Invite another adult</h3>
+            <p class="quiet">Create an invite with a sanitized summary only. Full answers are never placed in the link. Recipients complete their own quiz.</p>
+            <div class="check">
+              <input id="nr-share-consent" type="checkbox">
+              <label for="nr-share-consent">I allow a sanitized priorities summary (not every answer) to be encoded in an invite link.</label>
+            </div>
+            <button class="btn btn-emerald" id="nr-invite" type="button">Copy invite link</button>
+            <p class="nr-invite-link" id="nr-invite-link" hidden></p>
+          </div>
+
+          <div id="nr-compare-invite" hidden style="margin-top:28px">
+            <h3>Compare with the person who invited you</h3>
+            <p class="quiet">Comparison shows shared priorities and unresolved questions from sanitized summaries only.</p>
+            <div class="check">
+              <input id="nr-compare-optin" type="checkbox">
+              <label for="nr-compare-optin">I opt in to a private comparison on this device.</label>
+            </div>
+            <button class="btn btn-gold" id="nr-run-compare" type="button">Show comparison</button>
+            <div id="nr-compare-result" hidden style="margin-top:16px"></div>
+          </div>
+
+          <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--line)">
+            <h3>Optionally continue with Amanikah</h3>
+            <p class="quiet">Your full quiz remains free. Creating a member request can carry a sanitized summary only after consent.</p>
+            <div class="check">
+              <input id="nr-signup-consent" type="checkbox">
+              <label for="nr-signup-consent">I consent to include my sanitized Nikah Priorities summary with a Find My Match request on this device.</label>
+            </div>
+            <div class="nr-actions" style="margin-top:16px">
+              <button class="btn btn-emerald" id="nr-to-signup" type="button">Create a member request</button>
+              <button class="btn btn-ghost" id="nr-to-paid" type="button">Ask about assisted introduction</button>
+              <button class="btn btn-ghost" id="nr-retake" type="button">Retake quiz</button>
+            </div>
+          </div>
+          <p class="status" id="nr-result-status" role="status" style="margin-top:16px"></p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<canvas id="nr-canvas" class="nr-hidden-canvas" width="1200" height="630" aria-hidden="true"></canvas>
+<footer>
+  <div class="wrap foot">
+    <div>
+      <a class="logo" href="/" aria-label="Amanikah">Amani<span>kah</span></a>
+      <p>Nikah with Trust. Nikah with Aman.</p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="/contact.html">Contact</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+      <a href="/safety.html">Safety</a>
+      <a href="/help.html">Help</a>
+    </nav>
+  </div>
+</footer>
+<div class="dock"><a class="btn btn-gold" href="/signup.html">Find My Match</a></div>
+<script src="/js/site.js" defer></script>
+<script src="/js/nikah-readiness.js?v=2" defer></script>
+</body>
+</html>

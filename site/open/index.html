@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open in Amanikah</title>
+<meta name="description" content="Open a shared Amanikah link in the app when installed, or continue on the website.">
+<meta name="robots" content="noindex, follow">
+<meta name="theme-color" content="#123F35">
+<link rel="canonical" href="https://amanikah.com/open/">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="no-dock">
+<main class="wrap page-head">
+  <p class="kicker">Mobile</p>
+  <h1>Continue on the web, or open the app when it is installed</h1>
+  <p class="quiet">The Amanikah apps are not on the App Store or Google Play yet. Shared cards still open on this website.</p>
+  <div class="actions" id="actions">
+    <a class="btn btn-emerald" id="web" href="/simple-nikah/">Open on the website</a>
+  </div>
+  <p class="status" id="status" role="status"></p>
+</main>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var target = params.get("u") || "/simple-nikah/";
+  try {
+    var url = new URL(target, location.origin);
+    if (url.origin !== location.origin) target = "/simple-nikah/";
+    else target = url.pathname + url.search + url.hash;
+  } catch (err) {
+    target = "/simple-nikah/";
+  }
+  document.getElementById("web").href = target;
+  var appLink = "amanikah://" + target.replace(/^\//, "");
+  var status = document.getElementById("status");
+  var started = Date.now();
+  var hidden = false;
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) hidden = true;
+  });
+  window.location.href = appLink;
+  setTimeout(function () {
+    if (!hidden) {
+      status.textContent = "No installed app answered. Continue on the website.";
+      window.location.replace(target);
+    }
+  }, 1200);
+})();
+</script>
+</body>
+</html>

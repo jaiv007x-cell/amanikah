@@ -1,0 +1,15 @@
+.env
+.env.*
+ops.env
+sandbox.env
+*.db
+*.sqlite
+*.sqlite3
+__pycache__/
+*.pyc
+node_modules/
+.DS_Store
+.venv/
+venv/
+qa-artifacts/
+*.log

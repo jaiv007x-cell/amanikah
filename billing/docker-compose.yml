@@ -1,0 +1,24 @@
+services:
+  billing:
+    image: python:3.12-alpine
+    container_name: amanikah-billing
+    restart: unless-stopped
+    env_file:
+      - /root/amanikah-billing/sandbox.env
+    volumes:
+      - /root/amanikah-billing/server.py:/app/server.py:ro
+      - /var/www/amanikah/config/services.json:/config/services.json:ro
+      - billing_data:/data
+    command: ["python", "-u", "/app/server.py"]
+    networks:
+      edge:
+        aliases:
+          - amanikah-billing
+
+networks:
+  edge:
+    external: true
+    name: airrates_edge
+
+volumes:
+  billing_data:

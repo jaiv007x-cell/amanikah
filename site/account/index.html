@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Member account — Amanikah</title>
+<link rel="stylesheet" href="/css/site.css?v=5">
+</head>
+<body class="no-dock">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="bar">
+    <a class="logo" href="/" aria-label="Amanikah">Amani<span>kah</span></a>
+    <nav class="nav" aria-label="Primary">
+      <a href="/account/register.html">Register</a>
+      <a href="/account/login.html">Sign in</a>
+      <a href="/account/" aria-current="page">My account</a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="wrap narrow" style="padding:32px 16px 64px">
+  <p class="kicker">Production membership</p>
+  <h1>Your account</h1>
+  <p>This area is for verified production accounts. The demo app at <a href="/register">/register</a> stays separate and is never migrated here.</p>
+  <p class="status" id="status" role="status">Checking session…</p>
+  <div id="panel" class="panel" hidden>
+    <ul class="summary" id="summary"></ul>
+    <form id="profile" style="margin-top:16px">
+      <div class="field"><label for="displayName">Display name</label><input id="displayName" name="displayName" required></div>
+      <div class="field"><label for="city">City</label><input id="city" name="city"></div>
+      <div class="field"><label for="jurisdiction">Jurisdiction</label><input id="jurisdiction" name="jurisdiction"></div>
+      <div class="field"><label for="intentions">Intentions</label><textarea id="intentions" name="intentions"></textarea></div>
+      <button class="btn btn-emerald" type="submit">Save profile</button>
+    </form>
+    <div class="row" style="margin-top:16px">
+      <button class="btn btn-ghost" type="button" id="withdraw">Withdraw consent</button>
+      <button class="btn btn-ghost" type="button" id="delete">Delete account</button>
+      <button class="linkish" type="button" id="logout">Sign out</button>
+    </div>
+  </div>
+</main>
+<script src="/js/platform.js"></script>
+<script src="/js/account.js"></script>
+</body>
+</html>

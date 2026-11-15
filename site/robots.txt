@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+Allow: /safety.html
+Disallow: /app
+Disallow: /register
+Disallow: /login
+Disallow: /onboarding
+Disallow: /dashboard
+Disallow: /matches
+Disallow: /introductions
+Disallow: /messages
+Disallow: /family
+Disallow: /family-assistant
+Disallow: /voice
+Disallow: /verification
+Disallow: /settings
+Disallow: /safety
+Disallow: /checkout
+Disallow: /orders
+Disallow: /billing
+Disallow: /api/
+Disallow: /ops
+Disallow: /account
+
+Sitemap: https://amanikah.com/sitemap.xml

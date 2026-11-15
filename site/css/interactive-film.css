@@ -1,0 +1,92 @@
+/* Amanikah interactive film — progressive enhancement on premium homepage */
+.story-hero-wrap{height:570px;position:relative;align-self:end;display:flex;align-items:end;justify-content:center;padding:8px 0 35px}
+.story-hero-wrap::before{content:"";position:absolute;width:455px;height:510px;max-width:100%;border:1px solid rgba(214,187,132,.27);border-radius:48% 48% 24px 24px;transform:translate(23px,-2px)}
+.story-hero-media{width:min(420px,100%);height:512px;position:relative;overflow:hidden;border-radius:49% 49% 18px 18px;border:1px solid rgba(233,216,179,.32);box-shadow:0 30px 78px rgba(0,0,0,.32);background:#344c40}
+.story-hero-media video{display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 34%;filter:saturate(.88) contrast(1.02)}
+.story-hero-media::after{content:"";position:absolute;inset:45% 0 0;background:linear-gradient(180deg,transparent,rgba(3,26,22,.92));pointer-events:none}
+.story-hero-inner{position:absolute;z-index:2;inset:auto 21px 19px;color:white;text-align:left}
+.story-hero-inner .cinema-overline{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#e5ca95;font-weight:800}
+.story-hero-inner h3{font:normal 31px/1.04 var(--serif,Georgia,serif);letter-spacing:-.03em;color:white;margin:10px 0 11px}
+.story-hero-inner p{color:#d0ded7;font-size:12px;line-height:1.55;margin-bottom:15px;max-width:295px}
+.story-start{background:#e8d2a3;color:#17392f;border:0;padding:12px 19px;border-radius:7px;font-weight:800;width:100%;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;min-height:48px}
+.story-start:hover{background:#f4e3be}
+.story-media-control{position:absolute;top:22px;right:22px;z-index:3;background:#10342eca;color:white;border:1px solid #ffffff50;border-radius:50%;width:42px;height:42px;display:grid;place-items:center;cursor:pointer}
+.film-caption{position:absolute;top:23px;left:21px;background:#102c28bb;color:#e8dcc4;font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:8px 11px;border-radius:50px;z-index:3}
+.story-synthetic{font-size:10px;color:#d4dbd3;margin-top:11px;display:block;opacity:.82}
+.story-backdrop[hidden]{display:none!important}
+.story-backdrop{position:fixed;inset:0;z-index:140;background:rgba(4,20,17,.82);padding:24px;display:grid;place-items:center;overflow-y:auto}
+.story-shell{width:min(1060px,100%);min-height:590px;background:#fbf9f5;border-radius:22px;display:grid;grid-template-columns:.88fr 1.12fr;overflow:hidden;box-shadow:0 40px 100px #0009;position:relative}
+.story-film-pane{min-height:590px;position:relative;background:#123b34;overflow:hidden}
+.story-film-pane video{height:100%;width:100%;object-fit:cover;object-position:center 33%;position:absolute;inset:0;filter:saturate(.9)}
+.story-film-pane::after{content:"";position:absolute;inset:40% 0 0;background:linear-gradient(transparent,#09251fdd);pointer-events:none}
+.story-film-label{position:absolute;z-index:2;top:25px;left:24px;padding:9px 12px;background:#0b2b2799;border-radius:99px;color:#f6dfb4;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+.story-film-subtitle{position:absolute;z-index:2;bottom:26px;left:25px;right:25px;color:#f8f7ee;font-size:11px;line-height:1.5}
+.story-right-pane{padding:76px 55px 45px;position:relative;display:flex;flex-direction:column;justify-content:center}
+.story-close{position:absolute;right:22px;top:20px;border:1px solid #d6ded6;border-radius:50%;background:white;color:#1a4237;width:42px;height:42px;font-size:20px;display:grid;place-items:center;cursor:pointer}
+.story-step-info{font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.15em;color:#917242}
+.story-right-pane h2{font:normal clamp(2.25rem,4vw,3.7rem)/1.07 var(--serif,Georgia,serif);letter-spacing:-.045em;color:#173a31;margin:19px 0}
+.story-right-pane p{font-size:15px;max-width:440px;line-height:1.7;color:#64726d}
+.story-option-grid{display:grid;gap:10px;margin:19px 0 18px}
+.story-option{display:flex;gap:12px;align-items:center;text-align:left;background:#fff;border:1px solid #dce3da;padding:16px 17px;border-radius:10px;color:#1b3d33;font-weight:700;transition:background .15s,transform .15s;cursor:pointer;min-height:52px}
+.story-option:hover{background:#edf3ec;transform:translateY(-1px)}
+.story-option b{height:28px;width:28px;border:1px solid #dce5d9;border-radius:50%;display:grid;place-items:center;background:#f1f5ef;color:#48725f;flex-shrink:0;font-size:11px}
+.story-footer-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:9px}
+.story-mini{font-size:11px!important;color:#859288;line-height:1.5!important;margin-top:18px}
+.story-cta{background:#123b34;color:#fff;border:0;border-radius:8px;padding:14px 19px;font-weight:800;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;text-decoration:none;min-height:48px}
+.story-restart{border:1px solid #bdcfc1;background:transparent;color:#123b34;border-radius:8px;padding:12px 15px;font-weight:700;cursor:pointer;min-height:48px}
+.story-personalized{padding:16px 20px;background:#ecf2eb;border-left:3px solid #c6a56d;border-radius:7px;margin-bottom:15px;color:#294537;font-size:14px;line-height:1.6}
+.story-pause{position:absolute;left:22px;bottom:92px;z-index:4;background:#0e3029da;color:#fff;border:1px solid #e9f5eb6b;border-radius:99px;padding:8px 13px;font-size:12px;cursor:pointer}
+.story-nav-link{border:0;background:none;font:inherit;color:#425b52;font-size:13px;font-weight:650;cursor:pointer;padding:0}
+.story-nav-link:hover{color:#123b34}
+@media (max-width:950px){
+  .story-hero-wrap{height:490px}
+  .story-hero-media{height:455px;width:min(345px,100%)}
+  .story-shell{grid-template-columns:1fr 1fr}
+  .story-right-pane{padding:70px 30px 34px}
+}
+@media (max-width:760px){
+  .story-hero-wrap{height:460px;margin-top:-20px;align-self:center;padding-bottom:28px}
+  .story-hero-media{height:438px;width:min(340px,100%)}
+  .story-backdrop{padding:12px;align-items:start}
+  .story-shell{grid-template-columns:1fr;min-height:0;margin:auto}
+  .story-film-pane{min-height:235px;max-height:260px}
+  .story-film-pane video{object-position:center 28%}
+  .story-film-label{top:14px;left:14px}
+  .story-film-subtitle{bottom:13px;font-size:10px}
+  .story-pause{bottom:48px}
+  .story-right-pane{padding:40px 23px 25px}
+  .story-right-pane h2{font-size:clamp(2.1rem,8vw,3.2rem)}
+  .story-option{padding:13px 14px}
+  .story-close{right:13px;top:10px;z-index:5}
+  .story-hero-wrap::before{height:420px;max-width:95%}
+  .story-nav-link{padding:12px 0;width:100%;text-align:left}
+}
+@media (prefers-reduced-motion:reduce){
+  .story-option{transition:none}
+  .story-option:hover{transform:none}
+}
+
+.story-hero-inner .story-hero-title{font:normal 31px/1.04 var(--serif,Georgia,serif);letter-spacing:-.03em;color:white;margin:10px 0 11px}
+
+/* Cosmo v4: calm cinema controls */
+.story-pause{position:static;margin:0;background:#0c3b31e9;border:1px solid #f4dfaf88;border-radius:999px;padding:9px 14px;font-size:12px;color:white}
+.story-speed{background:#0c3b31e9;border:1px solid #f4dfaf88;border-radius:999px;padding:9px 12px;color:#fff2d7;font-size:12px;cursor:pointer}
+.cinema-controls{position:absolute;bottom:65px;left:20px;right:20px;z-index:5;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+@media (max-width:760px){
+  .cinema-controls{bottom:47px;left:12px;right:12px}
+  .story-speed,.story-pause{font-size:11px;padding:8px 10px}
+}
+
+/* Cosmo v4: controls live in the dialog text pane (always reachable on mobile) */
+.story-right-pane .cinema-controls{
+  position:static;
+  margin:0 0 18px;
+  padding:0;
+  left:auto;right:auto;bottom:auto;
+}
+.story-right-pane .story-pause,
+.story-right-pane .story-speed{
+  background:#123b34;
+  color:#fff2d7;
+  border:1px solid #c8a45a88;
+}

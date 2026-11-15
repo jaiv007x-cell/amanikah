@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "mode": "sandbox",
+  "currency": "INR",
+  "provider": "razorpay",
+  "scheduleNote": "Sandbox fee schedule for testing checkout. These amounts are not a live price and are not charged to a bank or card.",
+  "refund": {
+    "windowDays": 7,
+    "beforeWork": "Cancel before staff start the work and the sandbox payment is reversed in full.",
+    "afterStart": "Once work has started, the delivered portion is not reversed. A new scope needs a new order.",
+    "notDelivered": "If the written scope is not delivered, you can request a reversal of that order.",
+    "excluded": "Travel, venue hire, translation, apostille, and government fees are not refunded by Amanikah because Amanikah does not collect them."
+  },
+  "free": {
+    "id": "free-membership",
+    "name": "Free membership",
+    "pricePaise": 0,
+    "includes": [
+      "Create a private profile",
+      "Complete the Nikah Readiness Quiz",
+      "Make the #SimpleNikah pledge",
+      "Generate share cards",
+      "Express or decline mutual interest",
+      "Use essential privacy and safety controls, including block, report, and deletion"
+    ],
+    "excludes": [
+      "A person choosing introductions for you",
+      "Document checks",
+      "A relationship manager",
+      "Meeting coordination"
+    ]
+  },
+  "services": [
+    {
+      "id": "curated-introductions",
+      "name": "Curated introductions",
+      "summary": "A person proposes up to three introductions that match the expectations you wrote.",
+      "pricePaise": 450000,
+      "fulfillmentCostPaise": 120000,
+      "duration": "30 days from the day staff confirm the start",
+      "delivery": "Up to three written introductions, or a written note if fewer people fit the brief",
+      "included": [
+        "Review of the expectations you already saved",
+        "Up to three introductions inside the 30 days",
+        "A written reason for each introduction",
+        "You still accept or decline each one"
+      ],
+      "excluded": [
+        "A guarantee of marriage or of a reply",
+        "Contact details before mutual acceptance",
+        "Introductions after the third, or after day 30",
+        "Verification of the other person’s documents"
+      ],
+      "verificationLimits": "This service does not check education, employment, or identity. A suggestion is not a finding that someone is suitable.",
+      "additionalCharges": [
+        "Another set of three introductions is a new order",
+        "A document check is a separate service"
+      ]
+    },
+    {
+      "id": "education-employment-verification",
+      "name": "Scoped education and employment verification",
+      "summary": "One stated claim about education or employment is compared with the document you submit.",
+      "pricePaise": 250000,
+      "fulfillmentCostPaise": 70000,
+      "duration": "10 business days after the document arrives",
+      "delivery": "A written result that names the claim, the document, the date, and the limit of the check",
+      "included": [
+        "One education claim or one employment claim",
+        "Comparison with one document you supply",
+        "A result that says confirmed, not confirmed, or unable to check"
+      ],
+      "excluded": [
+        "A character reference",
+        "A check of honesty, income beyond the single claim, or family reputation",
+        "Confirmation of every line on a résumé",
+        "Any promise that a person is safe"
+      ],
+      "verificationLimits": "The result covers only the claim and document in the order. It is not ProofPass as a verdict on the person. A missing or unofficial document ends as unable to check.",
+      "additionalCharges": [
+        "Each extra claim is a new order",
+        "Translation, if the document is not in English, Hindi, or Urdu, is charged by the translator, not by this fee"
+      ]
+    },
+    {
+      "id": "nri-document-review",
+      "name": "Optional NRI document consistency review",
+      "summary": "A reviewer compares identity and residence documents you choose, looking only for consistency.",
+      "pricePaise": 350000,
+      "fulfillmentCostPaise": 90000,
+      "duration": "15 business days after the set of documents arrives",
+      "delivery": "A written consistency note listing which documents were compared and any mismatch",
+      "included": [
+        "Comparison of up to four documents you submit",
+        "A note of matching or differing name, date of birth, and address fields",
+        "The review is optional and is not required to express interest"
+      ],
+      "excluded": [
+        "Visa advice or immigration approval",
+        "Apostille, attestation, or legalisation",
+        "A finding that someone may enter or live in a country",
+        "Verification of a document that was not submitted"
+      ],
+      "verificationLimits": "Consistency is not authenticity. Amanikah does not contact a government registry in this service and does not confirm immigration status.",
+      "additionalCharges": [
+        "Government, courier, and attestation fees are paid by you to those offices",
+        "More than four documents requires a new order"
+      ]
+    },
+    {
+      "id": "relationship-manager",
+      "name": "Personal relationship manager",
+      "summary": "One coordinator helps you prepare for conversations you have already agreed to.",
+      "pricePaise": 1200000,
+      "fulfillmentCostPaise": 450000,
+      "duration": "45 days from the confirmed start",
+      "delivery": "Scheduled check-ins and a written summary after each conversation you ask the coordinator to join",
+      "included": [
+        "One named coordinator for the 45 days",
+        "Help preparing questions and a family brief from details you choose to share",
+        "Reminders you can turn off"
+      ],
+      "excluded": [
+        "Speaking for you, or accepting a match on your behalf",
+        "Therapy, religious rulings, or legal advice",
+        "A promise of marriage",
+        "Contact with the other person unless both adults have accepted"
+      ],
+      "verificationLimits": "The coordinator does not score character, sincerity, or compatibility, and does not replace a document check.",
+      "additionalCharges": [
+        "Time past 45 days is a new order",
+        "Curated introductions and document checks are separate services"
+      ]
+    },
+    {
+      "id": "meeting-coordination",
+      "name": "Public meeting coordination",
+      "summary": "Help setting one meeting in a public place after both adults have accepted an introduction.",
+      "pricePaise": 180000,
+      "fulfillmentCostPaise": 50000,
+      "duration": "One meeting, arranged within 21 days of the order",
+      "delivery": "A written plan with time, public place, and who is attending",
+      "included": [
+        "Coordination of one meeting after mutual acceptance",
+        "The meeting stays in a public place",
+        "Either person can cancel before the meeting"
+      ],
+      "excluded": [
+        "A private home, a hotel room, or an unescorted trip",
+        "Transport, food, and venue hire",
+        "A chaperone unless you arrange one",
+        "Any meeting before both adults have accepted"
+      ],
+      "verificationLimits": "Coordination does not verify identity at the door and does not assess how the meeting felt.",
+      "additionalCharges": [
+        "Each additional meeting is a new order",
+        "Travel and venue costs are paid by the people attending, not included here"
+      ]
+    }
+  ]
+}

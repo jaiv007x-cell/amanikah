@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Verify email — Amanikah</title>
+<link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="no-dock">
+<main id="main" class="wrap narrow" style="padding:48px 16px">
+  <h1>Email verification</h1>
+  <p class="status" id="status" role="status">Verifying…</p>
+  <p><a href="/account/login.html">Sign in</a></p>
+</main>
+<script src="/js/platform.js"></script>
+<script>
+(function () {
+  var token = AmanikahPlatform.qs("token");
+  var status = document.getElementById("status");
+  if (!token) {
+    status.textContent = "Missing token.";
+    return;
+  }
+  AmanikahPlatform.post("/auth/verify", { token: token }).then(function (r) {
+    status.textContent = r.body.ok ? "Email verified. You can sign in." : (r.body.message || r.body.code || "Verification failed");
+  }).catch(function () {
+    status.textContent = "Network error.";
+  });
+})();
+</script>
+</body>
+</html>

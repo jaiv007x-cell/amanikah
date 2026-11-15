@@ -1,0 +1,11 @@
+{
+  "name": "Amanikah",
+  "short_name": "Amanikah",
+  "description": "Nikah with Trust. Nikah with Aman.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAF8F3",
+  "theme_color": "#123F35",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

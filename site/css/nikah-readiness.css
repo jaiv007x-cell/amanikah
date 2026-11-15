@@ -1,0 +1,189 @@
+.nr-hero {
+  padding: var(--s10) 0 var(--s6);
+}
+.nr-hero h1 {
+  margin: 0 0 var(--s3);
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 1.05;
+}
+.nr-shell {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.nr-progress {
+  margin-bottom: var(--s3);
+}
+.nr-progress-track {
+  height: 6px;
+  background: rgba(18, 63, 53, 0.1);
+  overflow: hidden;
+}
+.nr-progress-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--gold), #d4bc82);
+  transition: width 0.35s ease;
+}
+.nr-progress-text {
+  margin: 10px 0 0;
+  color: var(--gold-text, #6b5524);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.nr-panel {
+  padding: var(--s4);
+  background: var(--paper);
+  border: 1px solid rgba(181, 154, 96, 0.45);
+  box-shadow: 0 18px 40px rgba(18, 63, 53, 0.05);
+}
+.nr-theme {
+  margin: 0 0 var(--s2);
+  color: var(--gold-text, #6b5524);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.nr-prompt {
+  margin: 0 0 var(--s3);
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  line-height: 1.2;
+  color: var(--emerald);
+}
+.nr-help, .nr-note {
+  margin: 0 0 var(--s3);
+  color: var(--muted);
+  font-size: 0.96rem;
+}
+.nr-note {
+  padding-left: var(--s2);
+  border-left: 2px solid var(--gold);
+}
+.nr-options {
+  display: grid;
+  gap: 10px;
+}
+.nr-choice {
+  width: 100%;
+  text-align: left;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--slate);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.nr-choice:hover,
+.nr-choice[aria-pressed="true"] {
+  border-color: var(--gold);
+  background: #fffaf1;
+}
+.nr-choice:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.nr-choice[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.nr-recover {
+  margin: 0 0 var(--s3);
+  padding: var(--s3);
+  border: 1px solid rgba(168, 137, 74, 0.45);
+  background: #fffaf1;
+}
+.nr-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s3);
+}
+.nr-enter {
+  animation: nrLift 0.45s ease;
+}
+@keyframes nrLift {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.nr-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s3);
+  margin: var(--s3) 0;
+}
+.nr-profile-grid article {
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.nr-profile-grid h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+.nr-profile-grid p { margin: 0; color: var(--muted); }
+.nr-top3, .nr-discuss, #nr-compare-result ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nr-top3 li,
+.nr-discuss li,
+#nr-compare-result li {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.nr-top3 strong { display: block; color: var(--emerald); }
+.nr-top3 span { color: var(--muted); }
+.nr-card-preview {
+  margin: var(--s3) 0;
+  border: 1px solid rgba(181, 154, 96, 0.45);
+  overflow: hidden;
+  background: #0c2b24;
+}
+.nr-card-preview img { width: 100%; height: auto; display: block; }
+.nr-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s2);
+}
+.nr-actions .btn { width: 100%; }
+.nr-invite-link {
+  margin-top: var(--s2);
+  padding: 12px 14px;
+  border: 1px dashed rgba(181, 154, 96, 0.55);
+  word-break: break-all;
+  color: var(--muted);
+  font-size: 0.9rem;
+  background: #fff;
+}
+.nr-banner {
+  margin-bottom: var(--s3);
+  padding: var(--s3);
+  border: 1px solid rgba(181, 154, 96, 0.45);
+  background: #fffaf1;
+}
+.nr-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.nr-hidden-canvas {
+  position: fixed;
+  inset: 0 auto auto 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+@media (max-width: 800px) {
+  .nr-profile-grid,
+  .nr-actions { grid-template-columns: 1fr; }
+  .nr-hero { padding-top: var(--s6); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nr-progress-fill, .nr-choice, .nr-enter { transition: none; animation: none; }
+}

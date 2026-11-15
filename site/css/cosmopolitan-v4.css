@@ -1,0 +1,67 @@
+/* Amanikah Cosmopolitan Emerald & Gold v4 — production overlay
+ * Source: Amanikah_Cosmopolitan_Emerald_Gold_v4.zip
+ * Does not replace site.css / account flows.
+ */
+:root{--pine:#073f34;--forest:#052f29;--ink:#21332d;--sub:#586d63;--cream:#fbf7ee;--sand:#f2ecdf;--gold:#d0ab62;--border:#e4dfd1;--sage:#d7e8d8;--display:Georgia,'Iowan Old Style','Times New Roman',serif;--sans:'Avenir Next','Segoe UI',system-ui,sans-serif}
+body{background:var(--cream)}
+.top-note{background:linear-gradient(90deg,#0c5547,#116a54 50%,#0c5547);color:#fff4d8;letter-spacing:.065em;font-weight:650}
+.header{background:rgba(251,247,238,.97);border-bottom:1px solid rgba(179,155,103,.25);backdrop-filter:blur(18px)}
+.brand{gap:13px}.brand-word{font-weight:500;letter-spacing:-.045em}.brand-mark{background:#083d33;color:#f2d79b;border:1px solid #c9ab6e;border-radius:18px 18px 5px 5px;font-size:0;box-shadow:0 3px 0 rgba(207,173,102,.32)}.brand-mark:before{content:'✦';font-size:22px;line-height:1}
+.nav-links a:not(.button),.story-nav-link{color:#21483d}.nav-links a:not(.button):hover{color:#ad8242}
+.button{border-radius:99px;box-shadow:none;letter-spacing:.01em}.button-primary{background:#0d5140;box-shadow:0 8px 24px #0434281c}.button-primary:hover{background:#126a52}
+.button-cream{background:linear-gradient(110deg,#f9e9c4,#dec18a);color:#113b31;border-color:#efdaa8;box-shadow:0 12px 30px #0002}
+.button-cream:hover{background:#ffecba}.button-outline{border-color:#d9bd81;color:#fff9e6}.eyebrow{color:#a17e43}
+.hero{background:radial-gradient(circle at 75% 37%,#146b53 0,#0a5142 19%,#073a32 47%,#052c28 100%);isolation:isolate}
+.hero:before{right:-120px;top:-90px;width:690px;height:690px;border:1px solid #e1bb6a24;box-shadow:0 0 0 100px #e6c67c10,0 0 0 200px #d1b36b06}
+.hero:after{content:'';position:absolute;inset:0;z-index:0;opacity:.115;background-image:url('/images/cosmo/islamic-geometry.svg');background-position:top right;background-repeat:repeat;background-size:180px 180px;mask-image:linear-gradient(to left,#000 0%,transparent 80%);pointer-events:none}
+.hero-grid{min-height:680px;max-width:1260px}.hero-copy{padding-block:100px;z-index:1}
+.hero h1{font-size:clamp(3.4rem,5.8vw,6.7rem);letter-spacing:-.055em;line-height:1.02}
+.hero h1 em{color:#f2d493;font-style:italic}
+.hero-copy>p{color:#e3e7d8;font-size:18px;max-width:535px;line-height:1.78}
+.hero-copy .eyebrow{color:#f4d59b;font-size:11px;letter-spacing:.2em}
+.hero-detail{color:#d2e6d9;font-size:12px}
+.story-hero-wrap{height:630px;z-index:1}.story-hero-wrap:before{height:555px;width:466px;border:1.5px solid #e0c18487;transform:translate(15px,-3px);border-radius:47% 47% 14px 14px;box-shadow:0 0 0 9px #fff2c609}
+.story-hero-media{height:560px;width:min(432px,100%);border:1.5px solid #cdaa62b5;border-radius:47% 47% 15px 15px;box-shadow:0 22px 110px #0008,0 0 0 7px #caa15e10}
+.story-hero-media video{filter:saturate(1.09) contrast(1.06) brightness(1.03)}
+.story-hero-media:after{background:linear-gradient(180deg,transparent 30%,#052923e8)}
+.story-hero-inner{inset:auto 25px 25px}.story-hero-inner h3{font-size:35px;line-height:1.08}.story-hero-inner p{font-size:13px;color:#fff8e8;line-height:1.6}
+.story-start{background:linear-gradient(120deg,#f7e2b0,#ccaa66);color:#123d31;border-radius:999px;padding:15px 18px;font-weight:800;box-shadow:0 9px 24px #0003}.story-start:hover{background:#ffe5a9}
+.story-media-control{background:#07382ddf;border-color:#e7cd9080;top:25px;right:25px}
+.film-caption{background:#113c34e6;border:1px solid #d7b5757a;color:#ffeba9;font-size:10px;letter-spacing:.075em;left:21px;top:25px}
+.story-synthetic{color:#f9edcc;font-size:10px;letter-spacing:.03em}
+.story-shell{border:1px solid #dfc38c;border-radius:22px;box-shadow:0 35px 140px #0009}
+.story-film-pane{background:#073b32}.story-film-pane:after{background:linear-gradient(transparent,#052822dc)}
+.story-right-pane{background:linear-gradient(170deg,#fffdf9,#f8f2e7)}
+.story-right-pane h2{color:#104936}.story-step-info{color:#996c32}
+.story-option{border:1px solid #dacdad;background:#fffdf8;border-radius:15px;padding:17px 18px}.story-option:hover{background:#f7edda;border-color:#b89658}.story-option b{background:#f5e5c8;color:#7b612b;border:1px solid #e1c38e}
+.story-personalized{background:#edf4e9;border-left-color:#c9a765}.story-cta{background:#0a5442;border-radius:999px}
+.story-film-label{border:1px solid #c8a45a77;color:#ffeba9}
+.story-pause{position:static;margin:0;background:#0c3b31e9;border:1px solid #f4dfaf88;border-radius:999px;padding:9px 14px;font-size:12px;color:white}
+.story-speed{background:#0c3b31e9;border:1px solid #f4dfaf88;border-radius:999px;padding:9px 12px;color:#fff2d7;font-size:12px;cursor:pointer}
+.cinema-controls{position:absolute;bottom:65px;left:20px;right:20px;z-index:5;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.intro-card{background:#fffdf9;border-radius:18px;border-color:#e2d5bb;box-shadow:0 14px 38px #15412b0b}
+.intro-card .step{color:#bd9151}.intro-card h3{color:#124e3c}
+.feature-block{border:1px solid #ddc9a1;border-radius:18px;min-height:430px}.feature-pledge{background:linear-gradient(145deg,#dfeddc,#f7f3de)}.feature-quiz{background:linear-gradient(145deg,#f3e6d2,#f7f5eb)}
+.alignment-visual{background:linear-gradient(145deg,#e4eee1,#f3e9d7);border:1px solid #d9caa9;border-radius:24px}
+.section-alt{background:linear-gradient(180deg,#f7f2e8,#faf7ef)}
+.family-section{background:#f0f4eb}
+.end-cta{background:linear-gradient(115deg,#05382e,#0e644d);position:relative;isolation:isolate;overflow:hidden}
+.end-cta:before{content:'';position:absolute;inset:0;opacity:.14;background:url('/images/cosmo/islamic-geometry.svg') center/180px;pointer-events:none;z-index:-1}
+.footer{background:#042c25}.foot-title{font-size:29px;color:#ffedbf}
+/* Original editorial section: subtle geometry + cosmopolitan imagery */
+.cosmo-editorial{background:#fffaf1;padding:100px 0 108px;border-block:1px solid #e7dbc3}
+.cosmo-intro{max-width:760px;margin:0 auto 44px;text-align:center}.cosmo-intro .eyebrow{justify-content:center}.cosmo-intro h2{color:#0b4738;font:normal clamp(2.5rem,4.6vw,4.5rem)/1.07 var(--display);letter-spacing:-.045em;margin:16px 0}.cosmo-intro h2 em{font-style:italic;color:#ae8249}.cosmo-intro>p{font-size:16px;line-height:1.8}
+.cosmo-scenes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
+.cosmo-scene{overflow:hidden;background:#fff;border:1px solid #e2d4bd;border-radius:18px;box-shadow:0 20px 45px #1f402014}
+.cosmo-shot,.cosmo-scene-pattern-top{height:275px;overflow:hidden;background:#1d5f4d;position:relative}
+.cosmo-shot img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.07);transition:transform .9s}
+.cosmo-scene:hover img{transform:scale(1.045)}
+.cosmo-scene-text{padding:28px 26px 26px}.cosmo-scene-text>span{color:#997b44;font-size:10px;letter-spacing:.16em;font-weight:800;text-transform:uppercase}.cosmo-scene-text h3{font:normal 29px/1.1 var(--display);color:#0d493b;margin:13px 0}.cosmo-scene-text p{font-size:13px;line-height:1.75;margin:0}
+.cosmo-scene-pattern-top{background:radial-gradient(circle at 65% 20%,#20836a,#07392f 72%);display:grid;place-items:center;isolation:isolate}
+.cosmo-scene-pattern-top:before{content:'';position:absolute;inset:0;background:url('/images/cosmo/islamic-geometry.svg') center/140px;opacity:.46;z-index:-1}
+.cosmo-pattern-star{font:normal 130px var(--display);color:#d9bc76;text-shadow:0 2px 45px #dcb876a0}
+.cosmo-media-note{font-size:12px;text-align:center;margin:20px 0 0;color:#718177}
+@media(max-width:970px){.story-hero-wrap{height:505px}.story-hero-media{height:470px}.cosmo-shot,.cosmo-scene-pattern-top{height:220px}.cosmo-scene-text{padding:22px 18px}.cosmo-scene-text h3{font-size:24px}}
+@media(max-width:730px){.hero-grid{grid-template-columns:1fr;gap:0}.hero-copy{padding:75px 0 26px}.hero h1{font-size:clamp(3.2rem,11vw,5.6rem)}.hero-copy>p{font-size:16px}.story-hero-wrap{height:500px;padding:0 0 32px;margin:0}.story-hero-wrap:before{height:470px;transform:translate(14px,-1px)}.story-hero-media{height:465px;width:min(360px,100%)}.story-right-pane{padding:50px 23px 25px}.story-film-pane{min-height:255px;max-height:280px}.cinema-controls{bottom:47px;left:12px;right:12px}.cosmo-editorial{padding:65px 0}.cosmo-scenes{grid-template-columns:1fr;gap:13px}.cosmo-shot,.cosmo-scene-pattern-top{height:245px}.cosmo-intro{margin-bottom:28px}.cosmo-scene-text{padding:24px}}
+@media(max-width:410px){.story-hero-wrap{height:460px}.story-hero-media{height:432px;width:min(322px,100%)}.story-hero-wrap:before{height:434px}.story-hero-inner h3{font-size:29px}.story-hero-inner{inset:auto 17px 18px}.film-caption{left:12px;max-width:65%;line-height:1.3}.story-synthetic{font-size:9px}.story-speed,.story-pause{font-size:11px;padding:8px 10px}}
+@media(prefers-reduced-motion:reduce){.cosmo-shot img{transition:none}.cosmo-scene:hover img{transform:none}}

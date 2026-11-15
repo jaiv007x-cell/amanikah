@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.amanikah.app",
+        "paths": ["/simple-nikah/*", "/nikah-readiness/*"]
+      }
+    ]
+  }
+}
