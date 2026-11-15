@@ -22,6 +22,20 @@ TOPICS = {
  "financial": ["What kind of nikah celebration feels comfortable?", "How should mahr be discussed separately from dowry?", "Which financial expectations should be clarified?"],
  "decline": ["Thank you for considering this introduction.", "After reflection, I will not continue with the proposal.", "I wish you well and ask that shared information remain private."]
 }
+TOPICS_HI = {
+ "first": ["आपसी सम्मान के साथ बातचीत कैसे शुरू करें?", "निकाह की समयसीमा के बारे में आपकी क्या अपेक्षाएँ हैं?", "परिवार को शामिल करने से पहले किन बातों पर चर्चा होनी चाहिए?"],
+ "family": ["दोनों वयस्क परिवार को कब शामिल करना चाहते हैं?", "परिवार के साथ कौन-सी निजी जानकारी साझा की जा सकती है?", "परिवार बिना निर्णय थोपे कैसे मदद कर सकता है?"],
+ "future": ["नौकरी या स्थानांतरण के लिए आपकी क्या योजनाएँ हैं?", "घर की जिम्मेदारियों के बारे में कैसे बात करें?", "मतभेदों को सम्मान से कैसे संभालेंगे?"],
+ "financial": ["किस तरह का निकाह समारोह आप दोनों के लिए सहज है?", "महर और दहेज का अंतर बनाए रखते हुए कैसे बातचीत करें?", "आगे बढ़ने से पहले कौन-सी आर्थिक अपेक्षाएँ स्पष्ट हों?"],
+ "decline": ["परिचय के लिए धन्यवाद।", "विचार करने के बाद मैं इस प्रस्ताव को आगे नहीं बढ़ाना चाहता/चाहती।", "आपके लिए शुभकामनाएँ; कृपया निजी जानकारी गोपनीय रखें।"]
+}
+TOPICS_UR = {
+ "first": ["باہمی احترام سے گفتگو کیسے شروع کریں؟", "نکاح کے وقت کے بارے میں آپ کی کیا توقعات ہیں؟", "خاندان کو شامل کرنے سے پہلے کن باتوں پر گفتگو ہو؟"],
+ "family": ["دونوں بالغ افراد خاندان کو کب شامل کرنا چاہتے ہیں؟", "کون سی نجی معلومات گھر والوں کے ساتھ شیئر کی جا سکتی ہیں؟", "خاندان فیصلہ مسلط کیے بغیر کیسے مدد کر سکتا ہے؟"],
+ "future": ["ملازمت یا منتقلی کے لیے کیا منصوبے ہیں؟", "گھر کی ذمہ داریوں پر کیسے بات کریں گے؟", "اختلاف رائے کو احترام سے کیسے سنبھالیں گے؟"],
+ "financial": ["کس قسم کی نکاح تقریب دونوں کو مناسب لگتی ہے؟", "مہر کو جہیز سے الگ رکھتے ہوئے کیسے گفتگو کریں گے؟", "آگے بڑھنے سے پہلے کون سی مالی توقعات واضح کریں گے؟"],
+ "decline": ["تعارف کے لیے شکریہ۔", "غور کرنے کے بعد میں یہ رشتہ آگے نہیں بڑھانا چاہتا/چاہتی۔", "نیک خواہشات؛ براہ کرم ذاتی معلومات خفیہ رکھیں۔"]
+}
 MIMES = {"audio/webm": ".webm", "audio/mp4": ".m4a", "audio/ogg": ".ogg"}
 SCOPES = {"city", "intentions", "voice"}
 MAX_BYTES = 2000000
@@ -146,7 +160,7 @@ class PrivateFeatures:
         lang=str(body.get("lang") or "en")
         if topic not in TOPICS or lang not in ("en","hi","ur"): return 400,fail("VALIDATION")
         mode="guided_questions"
-        items=TOPICS[topic]
+        items={"en":TOPICS,"hi":TOPICS_HI,"ur":TOPICS_UR}[lang][topic]
         if body.get("consentToAI") is True:
             key=self.store.conf.get("OPENAI_API_KEY")
             model=self.store.conf.get("AMANIKAH_AI_MODEL")
