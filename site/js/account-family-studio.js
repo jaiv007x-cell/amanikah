@@ -117,6 +117,15 @@
            };li.appendChild(b);
          });
        }else{
+         var leave=document.createElement("button");leave.textContent="Leave invitation";leave.className="secondary";
+         leave.onclick=async function(){
+           if(!confirm("Leave this invitation? You will no longer be able to see this member's shared details."))return;
+           try{
+             await jsonApi("/me/family/respond",{invitationId:item.id,accept:false});
+             $("sharedInfo").textContent="You left this invitation.";
+             await refreshFamily();
+           }catch(e){say("familyStatus",e.message);}
+         };li.appendChild(leave);
          var b=document.createElement("button");b.textContent="View permitted information";b.className="secondary";b.onclick=async function(){
            try{
              var r=await api("/me/family/shared/"+encodeURIComponent(item.ownerId));
