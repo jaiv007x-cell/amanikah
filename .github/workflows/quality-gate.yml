@@ -34,6 +34,9 @@ jobs:
           grep -q 'button-updates' site/index.html
           test -s site/css/finish-2026.css
           test -s site/icon.svg
+          grep -q 'id="waliForm"' site/account/family.html
+          grep -q 'id="scopeWali"' site/account/family.html
+          grep -q '/me/family/brief' site/js/account-family-studio.js
       - name: Validate rendered 42-second silent film
         run: |
           test -s site/images/film/amanikah-story-42s.mp4
