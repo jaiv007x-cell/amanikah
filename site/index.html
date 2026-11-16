@@ -34,7 +34,8 @@
 <link rel="stylesheet" href="/css/interactive-film.css?v=6">
 <link rel="stylesheet" href="/css/cosmopolitan-v4.css?v=3">
 <link rel="stylesheet" href="/css/readability-2026.css?v=1">
-<link rel="preload" as="image" href="/images/film/amanikah-poster.webp" type="image/webp">
+<link rel="stylesheet" href="/css/clarity-2026.css?v=1">
+<link rel="preload" as="image" href="/images/film/amanikah-poster.webp" type="image/webp" fetchpriority="high">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -66,12 +67,12 @@
     </a>
     <button class="menu menu-button" type="button" aria-expanded="false" aria-controls="nav" aria-label="Open menu">☰</button>
     <nav class="nav-links" id="nav" aria-label="Main navigation">
-      <a href="/#approach">Our approach</a>
+      <a href="/#approach">How it works</a>
       <button type="button" class="story-nav-link" data-open-film>The story</button>
       <a href="/simple-nikah/">#SimpleNikah</a>
       <a href="/nikah-readiness/">Nikah priorities</a>
       <a href="/#trust">Trust &amp; privacy</a>
-      <a href="/#questions">FAQs</a>
+      <a href="/#nri">NRI families</a>
       <a class="button button-primary button-sm nav-cta" href="/account/register.html">Create your private profile <span aria-hidden="true">↗</span></a>
     </nav>
   </div>
@@ -80,31 +81,31 @@
   <section class="hero" id="top">
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <span class="eyebrow ds-kicker">Early access · Matchmaking not live</span>
-        <h1>Your values. Your choice. <em>Your Nikah.</em></h1>
-        <p>Discover marriage-minded Muslims who share your hopes for the future, with private introductions and family involvement on your terms.</p>
+        <span class="eyebrow ds-kicker">A more considered way to meet</span>
+        <h1>For a meaningful <em>Nikah.</em><br>Start with understanding.</h1>
+        <p>Marriage-focused. Private by design. Rooted in the values that matter to you—before an introduction ever begins.</p>
         <div class="cta-row">
-          <a class="button button-cream ds-btn ds-btn-gold" href="/account/register.html">Create your private profile <span aria-hidden="true">↗</span></a>
-          <a class="button button-outline ds-btn ds-btn-ghost" href="/nikah-readiness/">Discover your Nikah priorities <span aria-hidden="true">↗</span></a>
+          <a class="button button-cream ds-btn ds-btn-gold" href="/account/register.html">Begin my private profile <span aria-hidden="true">↗</span></a>
+          <a class="button button-outline ds-btn ds-btn-ghost" href="/nikah-readiness/">Take the free Nikah quiz <span aria-hidden="true">↗</span></a>
         </div>
         <button class="story-media-control hero-film-control" id="storyHeroPause" type="button" aria-label="Play the 30-second illustrative film" aria-pressed="false">▶ Watch the 30-second film</button>
         <div class="hero-detail">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
-          Private by design · Free to begin · Adults 21+
+          For adults 21+ · Free to begin · Introductions coming soon
         </div>
-        <p class="hero-waitlist">Prefer a waitlist request first? <a href="/signup.html">Join the early-access waitlist</a>.</p>
+        <p class="hero-waitlist">Not ready to create a profile? <a href="/signup.html">Join the early-access list</a>.</p>
       </div>
       <div class="story-hero-wrap">
         <div class="story-hero-media">
-          <video id="storyHeroVideo" poster="/images/film/amanikah-poster.webp" muted playsinline preload="none" aria-label="Illustrative animated actor introducing the Amanikah experience">
+          <video id="storyHeroVideo" poster="/images/film/amanikah-poster.webp" muted playsinline preload="none" aria-label="Silent dramatized scene using fictional AI-generated adults">
             <source src="/images/film/amanikah-story-30s.mp4" type="video/mp4">
           </video>
           <span class="film-caption">Amanikah · A 30-second illustrative film</span>
           
           <div class="story-hero-inner">
             <span class="cinema-overline">Explore a different kind of beginning</span>
-            <p class="story-hero-title">Your story, at your pace.</p>
-            <p>A thoughtful film about what matters. There’s no rush — you decide when to continue.</p>
+            <p class="story-hero-title">A thoughtful beginning.</p>
+            <p>A short interactive story about priorities, privacy and the people you choose to involve.</p>
             <button class="story-start" type="button" data-open-film>▶ Explore the story</button>
             <small class="story-synthetic">AI-generated fictional actors · an illustrative story, not real members or testimonials</small>
           </div>
@@ -116,7 +117,7 @@
   <div class="strip">
     <div class="wrap strip-inner">
       <div class="strip-item"><div class="icon-round">♡</div><div><strong>Marriage-minded by design</strong><span>Intentions before endless scrolling</span></div></div>
-      <div class="strip-item"><div class="icon-round">♧</div><div><strong>Your details stay yours</strong><span>Control what you choose to share</span></div></div>
+      <div class="strip-item"><div class="icon-round">◇</div><div><strong>Your details stay yours</strong><span>Control what you choose to share</span></div></div>
       <div class="strip-item"><div class="icon-round">✧</div><div><strong>Family on your terms</strong><span>Invite support, keep your voice</span></div></div>
     </div>
   </div>
@@ -211,20 +212,6 @@
     </div>
   </section>
 
-<section class="an-launch-tools" aria-labelledby="an-launch-title">
- <div class="wrap">
-  <div class="section-head">
-   <div><span class="eyebrow">Explore Amanikah today</span><h2 id="an-launch-title">Thoughtful tools for a meaningful beginning.</h2></div>
-   <p>Three useful experiences you can try without waiting for matchmaking to launch. Free, private, and designed around your choices.</p>
-  </div>
-  <div class="an-launch-grid">
-   <article class="an-launch-card"><span class="eyebrow">A shared commitment</span><h3>#SimpleNikah</h3><p>Make a voluntary pledge for a dignified celebration without dowry demands. Download a beautiful card or share only what you choose.</p><a class="button button-primary" href="/simple-nikah/">Explore the pledge ↗</a></article>
-   <article class="an-launch-card"><span class="eyebrow">Your priorities</span><h3>Nikah readiness</h3><p>Reflect on family, wedding expectations, relocation and your future together. Receive a private summary—not a pass/fail score.</p><a class="button button-primary" href="/nikah-readiness/">Take the free quiz ↗</a></article>
-   <article class="an-launch-card"><span class="eyebrow">Family support</span><h3>Aman family guide</h3><p>Generate respectful meeting questions, a preparation checklist and a thoughtful response. No AI model or private-profile access is implied.</p><a class="button button-primary" href="/family-guide/">Use the free guide ↗</a></article>
-   <article class="an-launch-card"><span class="eyebrow">Verified members · private</span><h3>AI Wali &amp; Voice Rishta</h3><p>Prepare a careful family conversation or record your personal voice introduction. AI responses require explicit consent and a configured service; recordings stay private.</p><a class="button button-primary" href="/account/family.html">Explore Family Studio ↗</a></article>
-  </div>
- </div>
-</section>
   <section class="section alignment" id="alignment">
     <div class="wrap alignment-grid">
       <div class="alignment-visual">
@@ -273,7 +260,7 @@
         <span class="eyebrow">Family, where it belongs</span>
         <h2>Your life. Your choice. Their support.</h2>
         <p>Marriage can bring two families together without removing either adult’s voice. Amanikah is being designed to give family members a thoughtful role, with permission and clear boundaries.</p>
-        <p>Try our free family discussion guide today. The private member Family Assistant remains a clearly labeled demonstration until a secure live AI service is configured.</p><p><a href="/family-guide/" class="button button-outline">Open family guide ↗</a></p>
+        <p>Use the free family discussion guide today. Verified members can also open Family Studio for permission-based family invitations and a private voice introduction; AI responses require a separately configured service and explicit consent.</p><p><a href="/family-guide/" class="button button-outline">Open free family guide ↗</a> <a href="/account/family.html" class="an-text-link">Member Family Studio</a></p>
         <a href="/account/register.html" class="button button-primary">Create private profile <span aria-hidden="true">↗</span></a>
       </div>
       <div class="family-art">
@@ -290,90 +277,43 @@
     </div>
   </section>
 
-  <section class="ds-band ds-band-champagne" id="journey" aria-labelledby="journey-title">
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">One clear path</span>
-          <h2 id="journey-title">From curiosity to a careful introduction.</h2>
-        </div>
-        <p class="ds-lede">Homepage tools stay free. Production accounts, preferences and introductions stay separate from the browser-only demo membership.</p>
+  <section class="an-focus-section" id="nri" aria-labelledby="an-nri-title">
+    <div class="wrap an-focus-grid">
+      <div class="an-focus-copy">
+        <span class="eyebrow">From Hyderabad to anywhere</span>
+        <h2 id="an-nri-title">Rooted here. Connected everywhere.</h2>
+        <p>Whether your plans are in India or overseas, important questions deserve time: relocation, careers, family expectations and the kind of home you want to build.</p>
+        <p class="an-availability">NRI introductions and optional document reviews are being prepared. No uncompleted verification is presented as a completed check.</p>
+        <a class="button button-primary" href="/nikah-readiness/">Explore your priorities <span aria-hidden="true">↗</span></a>
       </div>
-      <div class="intro-grid">
-        <article class="intro-card ds-card"><div class="step">01</div><h3>Create a private profile</h3><p>Register at <a href="/account/register.html">/account/register.html</a>, verify your email, then edit what you choose to share.</p></article>
-        <article class="intro-card ds-card"><div class="step">02</div><h3>Clarify Nikah priorities</h3><p>Complete the free quiz or #SimpleNikah pledge. Preferences are saved to a member profile only with your consent.</p></article>
-        <article class="intro-card ds-card"><div class="step">03</div><h3>Consent-based introductions</h3><p>Operator-mediated matching is being prepared and is <strong>not live</strong>. When enabled, both adults must consent before contact details move forward.</p></article>
-      </div>
-    </div>
-  </section>
-
-  <section class="ds-band ds-band-ivory" id="verification" aria-labelledby="verify-title">
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">Trust without exaggeration</span>
-          <h2 id="verify-title">Checks that say exactly what was reviewed.</h2>
-        </div>
-        <p class="ds-lede">No badge implies a full character, income or property investigation. Scoped services are listed on pricing and remain sandbox until fulfillment is ready.</p>
-      </div>
-      <div class="twin">
-        <article class="ds-card">
-          <span class="ds-badge">Claim-specific</span>
-          <h3>Scoped education or employment review</h3>
-          <p>One stated claim compared with a document you submit. Results are confirmed, not confirmed, or unable to check — never a guarantee of suitability.</p>
-          <p style="margin-top:16px"><a class="ds-btn ds-btn-outline" href="/services/#education-employment-verification">Service terms</a></p>
-        </article>
-        <article class="ds-card">
-          <span class="ds-badge ds-badge-sandbox">Sandbox fees</span>
-          <h3>NRI document consistency</h3>
-          <p>Optional review of identity and residence documents you choose, looking only for consistency. Not a visa, income or character certificate.</p>
-          <p style="margin-top:16px"><a class="ds-btn ds-btn-outline" href="/services/#nri-document-review">NRI service terms</a></p>
-        </article>
+      <div class="an-focus-panel" aria-label="Illustrative international marriage planning questions">
+        <span class="an-panel-kicker">A thoughtful conversation</span>
+        <div class="an-panel-question"><span>01</span><strong>Where will we build a home?</strong><small>Relocation &amp; future plans</small></div>
+        <div class="an-panel-question"><span>02</span><strong>How do we involve our families?</strong><small>By mutual agreement</small></div>
+        <div class="an-panel-question"><span>03</span><strong>Which claims need checking?</strong><small>Only a documented, scoped review</small></div>
+        <div class="an-panel-foot">Questions, not compatibility scores.</div>
       </div>
     </div>
   </section>
-
-  <section class="ds-band ds-band-sage" id="pricing-preview" aria-labelledby="pricing-title">
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">Free and paid</span>
-          <h2 id="pricing-title">Real catalog. Sandbox checkout.</h2>
+  <section class="an-membership-section" id="services" aria-labelledby="an-member-title">
+    <div class="wrap an-membership-grid">
+      <div>
+        <span class="eyebrow">Your journey starts free</span>
+        <h2 id="an-member-title">A private profile. A clearer conversation.</h2>
+        <p>Create your account, explore #SimpleNikah, and discover your priorities without a subscription. Family Studio and private Voice Rishta are offered to eligible signed-in members.</p>
+        <p class="an-availability">Assisted introductions, verification and paid services are not yet accepting live orders.</p>
+        <div class="an-membership-actions">
+          <a class="button button-primary" href="/account/register.html">Create a private profile ↗</a>
+          <a class="an-text-link" href="/account/family.html">Explore Family Studio</a>
         </div>
-        <p class="ds-lede">Membership tools are free. Paid introductions and checks use a sandbox fee schedule until live fulfillment and payment verification are operational.</p>
       </div>
-      <div class="intro-grid">
-        <article class="ds-card"><h3>Free membership</h3><p>Private profile, Nikah Priorities quiz, #SimpleNikah pledge, share cards and essential privacy controls.</p><p class="ds-status ds-status-ok" style="margin-top:12px">₹0</p></article>
-        <article class="ds-card"><h3>Curated introductions</h3><p>Up to three written introductions matching expectations you saved — when matchmaking is live and staffed.</p><p class="ds-status" style="margin-top:12px">₹4,500 sandbox · not live fulfillment</p></article>
-        <article class="ds-card"><h3>Refunds</h3><p>Cancel before work starts for a full sandbox reversal. Delivered work is not reversed. See the full policy for exclusions.</p><p style="margin-top:12px"><a class="ds-btn ds-btn-outline ds-btn-sm" href="/refund-policy/">Refund policy</a> <a class="ds-btn ds-btn-primary ds-btn-sm" href="/pricing/">Full pricing</a></p></article>
+      <div class="an-membership-note">
+        <strong>What we promise today</strong>
+        <p>Free tools, your control over sharing, and honest explanations of what's available. Never a paid shortcut to someone's personal information.</p>
+        <div class="an-member-links"><a href="/pricing/">Future service pricing</a><a href="/safety.html">Safety &amp; reporting</a><a href="/contact.html">Contact our team</a></div>
       </div>
     </div>
   </section>
-
-  <section class="ds-band ds-band-ivory" id="support" aria-labelledby="support-title">
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">Human support</span>
-          <h2 id="support-title">Operators review what the server accepts.</h2>
-        </div>
-        <p class="ds-lede">Contact and safety forms store tickets for authorized review. Transactional email to the operator mailbox is not configured yet — accepted messages remain in the operator outbox.</p>
-      </div>
-      <div class="twin">
-        <article class="ds-card">
-          <h3>Contact</h3>
-          <p>Ordinary support inquiries receive a reference after server acceptance. Nothing is shown as delivered if the API rejects the request.</p>
-          <p style="margin-top:16px"><a class="ds-btn ds-btn-primary" href="/contact.html">Contact Amanikah</a></p>
-        </article>
-        <article class="ds-card">
-          <h3>Safety</h3>
-          <p>Urgent safety reports are separated from ordinary support. Use local emergency services if you are in immediate danger.</p>
-          <p style="margin-top:16px"><a class="ds-btn ds-btn-outline" href="/safety.html">Safety guidance</a></p>
-        </article>
-      </div>
-    </div>
-  </section>
-
   <section class="section faq" id="questions">
     <div class="wrap faq-grid">
       <div>
@@ -396,7 +336,7 @@
     <div class="wrap">
       <span class="eyebrow">Begin with intention</span>
       <h2>Your values. Your choice. Your Nikah.</h2>
-      <p>Create your private profile or clarify your priorities. Live introductions are not operational yet — we will not pretend otherwise.</p>
+      <p>Begin privately, explore what matters, and join us as we prepare the introduction service. No artificial promises. No endless scrolling.</p>
       <div class="cta-row" style="justify-content:center">
         <a class="button button-cream" href="/account/register.html">Create your private profile ↗</a>
         <a class="button button-outline" href="/signup.html">Join the early-access waitlist ↗</a>
