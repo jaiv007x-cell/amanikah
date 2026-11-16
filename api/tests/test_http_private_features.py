@@ -95,6 +95,44 @@ class Integration(unittest.TestCase):
         assert code==200,(code,logged)
         return mid,logged["token"]
 
+    def test_wali_http_privacy_scope_and_delete(self):
+        owner, ot = self.registered("ci-wali-owner@example.test")
+        family, ft = self.registered("ci-wali-family@example.test")
+        stranger, st = self.registered("ci-wali-stranger@example.test")
+        self.assertEqual(self.request("GET", "/me/family/brief")[0], 401)
+        self.assertEqual(self.request("GET", "/me/family/brief",token=ot)[1]["brief"], {})
+        code, saved = self.request("POST", "/me/family/brief",
+            {"brief":{"marriageGoals":"A simple, caring marriage",
+                      "familyExpectations":"Please listen to us both"}},token=ot)
+        self.assertEqual(code, 200, saved)
+        self.assertFalse(saved["sharedPublicly"])
+        self.assertEqual(self.request("POST", "/me/family/brief",
+            {"brief":{"questions":"X"*351}},token=ot)[0],400)
+        self.assertEqual(self.request("GET", "/me/family/shared/"+owner,token=ft)[0],403)
+        self.assertEqual(self.request("GET", "/me/family/shared/"+owner,token=st)[0],403)
+
+        code, invitation=self.request("POST", "/me/family/invite",{
+            "email":"ci-wali-family@example.test","scopes":["wali_brief"]},token=ot)
+        self.assertEqual(code,202)
+        self.assertEqual(self.request("GET", "/me/family/shared/"+owner,token=ft)[0],403)
+        incoming=self.request("GET","/me/family",token=ft)[1]["received"][0]
+        self.assertEqual(self.request("POST", "/me/family/respond",{
+            "invitationId":incoming["id"],"accept":True},token=ft)[0],200)
+        code, shared=self.request("GET", "/me/family/shared/"+owner,token=ft)
+        self.assertEqual(code,200)
+        self.assertEqual(shared["shared"]["waliBrief"]["marriageGoals"],"A simple, caring marriage")
+        self.assertNotIn("city",shared["shared"])
+        self.assertEqual(self.request("GET","/me/family/shared/"+owner,token=st)[0],403)
+
+        self.assertEqual(self.request("POST", "/me/family/brief/delete",{},token=ot)[0],200)
+        self.assertNotIn("waliBrief",self.request("GET", "/me/family/shared/"+owner,token=ft)[1]["shared"])
+        self.assertEqual(self.request("POST", "/me/family/brief",
+            {"brief":{"questions":"Discuss values before decisions"}},token=ot)[0],200)
+        self.assertEqual(self.request("POST", "/me/family/revoke",
+            {"invitationId":incoming["id"]},token=ot)[0],200)
+        self.assertEqual(self.request("GET", "/me/family/shared/"+owner,token=ft)[0],403)
+        self.assertEqual(self.request("POST", "/me/delete",{},token=ot)[0],200)
+
     def test_production_member_privacy_and_voice(self):
         owner,ot=self.registered("ci-owner@example.test")
         family,ft=self.registered("ci-family@example.test")
