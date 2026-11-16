@@ -2,6 +2,9 @@ name: Amanikah real-browser smoke tests
 on: [push, pull_request]
 permissions:
   contents: read
+concurrency:
+  group: amanikah-ui-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   browser:
     runs-on: ubuntu-latest
