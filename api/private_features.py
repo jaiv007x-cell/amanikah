@@ -60,6 +60,10 @@ class PrivateFeatures:
               scopes TEXT NOT NULL, accepted_at TEXT, revoked_at TEXT, created_at TEXT NOT NULL,
               UNIQUE(owner_id, invitee_id)
             );
+            CREATE TABLE IF NOT EXISTS family_blocks (
+              blocker_id TEXT NOT NULL, blocked_id TEXT NOT NULL,
+              created_at TEXT NOT NULL, PRIMARY KEY(blocker_id, blocked_id)
+            );
             CREATE TABLE IF NOT EXISTS private_voice (
               owner_id TEXT PRIMARY KEY, filename TEXT NOT NULL,
               content_type TEXT NOT NULL, size INTEGER NOT NULL,
@@ -80,7 +84,17 @@ class PrivateFeatures:
         """, (member_id,)).fetchone()
         return bool(row)
 
+    def is_blocked(self, first, second):
+        if first == second:
+            return False
+        return bool(self.store.conn.execute("""
+          SELECT 1 FROM family_blocks
+          WHERE (blocker_id=? AND blocked_id=?) OR (blocker_id=? AND blocked_id=?)
+          LIMIT 1
+        """, (first, second, second, first)).fetchone())
+
     def active_grant(self, owner, recipient):
+        if self.is_blocked(owner, recipient): return set()
         row = self.store.conn.execute("""
           SELECT scopes FROM family_grants WHERE owner_id=? AND invitee_id=?
           AND accepted_at IS NOT NULL AND revoked_at IS NULL
@@ -116,7 +130,7 @@ class PrivateFeatures:
             return 400, fail("BAD_SCOPE")
         with self.lock:
             peer = self.store.conn.execute("SELECT id FROM members WHERE email=? AND deleted_at IS NULL", (email,)).fetchone()
-            if peer and peer["id"] != mid and self.member_ok(peer["id"]):
+            if peer and peer["id"] != mid and self.member_ok(peer["id"]) and not self.is_blocked(mid,peer["id"]):
                 ident = secrets.token_hex(12)
                 self.store.conn.execute("""
                   INSERT INTO family_grants(id,owner_id,invitee_id,scopes,created_at)
@@ -129,12 +143,42 @@ class PrivateFeatures:
                 self.store.audit("family_invited",actor=mid,entity_type="member",entity_id=peer["id"])
         return 202, {"ok":True,"message":"If this verified account exists, an invitation is pending in its family workspace."}
 
+    def block(self, mid, body):
+        target = str(body.get("memberId") or "")[:100]
+        if not target or target == mid:
+            return 400, fail("VALIDATION")
+        with self.lock:
+            row = self.store.conn.execute("SELECT id FROM members WHERE id=? AND deleted_at IS NULL",(target,)).fetchone()
+            if not row: return 404, fail("NOT_FOUND")
+            self.store.conn.execute("INSERT OR IGNORE INTO family_blocks(blocker_id,blocked_id,created_at) VALUES(?,?,?)",(mid,target,now()))
+            self.store.conn.commit()
+        self.store.audit("family_member_blocked",actor=mid,entity_type="member",entity_id=target)
+        return 200, {"ok":True,"blocked":True}
+
+    def report_voice(self, mid, body, client_ip):
+        owner = str(body.get("memberId") or "")[:100]
+        reason = str(body.get("reason") or "").strip()[:500]
+        if not owner or owner == mid or not 20 <= len(reason) <= 500:
+            return 400, fail("VALIDATION","Provide a reason of at least 20 characters.")
+        with self.lock:
+            if "voice" not in self.active_grant(owner,mid):
+                return 403,fail("FORBIDDEN")
+            person=self.store.conn.execute("SELECT email FROM members WHERE id=?",(mid,)).fetchone()
+            status, result = self.store.create_ticket({
+                "name":"Verified member", "email":person["email"],
+                "topic":"Voice Rishta content report",
+                "message":"Reporter member: "+mid+"; recording owner: "+owner+"; reason: "+reason,
+                "kind":"safety"
+            },client_ip,urgent=True)
+        return status, {"ok":status<300,"reference":result.get("reference"),"code":result.get("code"),"message":"Report submitted for safety review." if status<300 else result.get("message")}
+
     def respond(self, mid, body):
         ident = str(body.get("invitationId") or "")[:80]
         accept = body.get("accept") is True
         with self.lock:
-            row = self.store.conn.execute("SELECT id FROM family_grants WHERE id=? AND invitee_id=? AND revoked_at IS NULL", (ident,mid)).fetchone()
+            row = self.store.conn.execute("SELECT id,owner_id FROM family_grants WHERE id=? AND invitee_id=? AND revoked_at IS NULL", (ident,mid)).fetchone()
             if not row: return 404, fail("NOT_FOUND")
+            if self.is_blocked(row["owner_id"],mid): return 403,fail("BLOCKED")
             self.store.conn.execute("UPDATE family_grants SET accepted_at=?,revoked_at=? WHERE id=?",
                                     (now() if accept else None,None if accept else now(),ident))
             self.store.conn.commit()
@@ -266,6 +310,7 @@ class PrivateFeatures:
             self.delete_voice(mid)
             self.store.conn.execute("DELETE FROM family_grants WHERE owner_id=? OR invitee_id=?",(mid,mid))
             self.store.conn.execute("DELETE FROM family_ai_usage WHERE member_id=?",(mid,))
+            self.store.conn.execute("DELETE FROM family_blocks WHERE blocker_id=? OR blocked_id=?",(mid,mid))
             self.store.conn.commit()
 
     def audio(self, requester, owner, handler, write_body):
@@ -298,6 +343,10 @@ class PrivateFeatures:
             return handler._send(*self.invite(mid,handler._json() or {}),write_body)
         if path=="/api/amanikah/me/family/respond" and method=="POST":
             return handler._send(*self.respond(mid,handler._json() or {}),write_body)
+        if path=="/api/amanikah/me/family/block" and method=="POST":
+            return handler._send(*self.block(mid,handler._json() or {}),write_body)
+        if path=="/api/amanikah/me/voice/report" and method=="POST":
+            return handler._send(*self.report_voice(mid,handler._json() or {},handler._client()),write_body)
         if path=="/api/amanikah/me/family/revoke" and method=="POST":
             return handler._send(*self.revoke(mid,handler._json() or {}),write_body)
         if path.startswith("/api/amanikah/me/family/shared/") and method=="GET":
