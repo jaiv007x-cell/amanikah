@@ -184,3 +184,34 @@ test('new scalable Amanikah emblem is visible throughout key pages', async ({pag
     expect(valid).toBe(true);
   }
 });
+
+
+test('operator console renders untrusted lead and funnel text without execution', async ({page}) => {
+  const attack = '<img src=x onerror="window.__amanikahInjected=1">';
+  await page.route('**/api/amanikah/ops/**', async route => {
+    const pathname = new URL(route.request().url()).pathname;
+    const key = pathname.split('/').pop();
+    const responses = {
+      dashboard: {ok:true,mode:'waitlist',matchmakingLive:false,mailConfigured:false,operatorEmailConfigured:false,payments:'sandbox',
+        leads:{new:1,contacted:0,qualified:0,converted:0,closed:0},
+        ticketsOpen:0,safetyOpen:0,members:0,casesOpen:0,verificationsOpen:0,fulfillmentQueued:0,
+        notificationsQueued:0,notificationsFailed:0,demoMembers:0},
+      leads:{ok:true,leads:[{id:'safe-id',reference:'AK-TEST',name:attack,email:'test@example.test',
+        city:attack,source:'test',status:'new',created_at:'2026-11-17'}]},
+      tickets:{ok:true,tickets:[]},cases:{ok:true,cases:[]},verifications:{ok:true,requests:[]},
+      fulfillment:{ok:true,items:[]},notifications:{ok:true,notifications:[]},
+      funnel:{ok:true,totals:{},membersProduction:0,note:attack,paymentsMode:'sandbox',
+        leadsBySourceStatus:[],leadsByDay:[]}
+    };
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(responses[key]||{ok:false})});
+  });
+  await page.goto(base+'/ops/');
+  await page.locator('#opsToken').fill('ci-test-token');
+  await page.locator('#loadBtn').click();
+  await expect(page.locator('#leads')).toContainText(attack);
+  await expect(page.locator('#funnel')).toContainText(attack);
+  await expect(page.locator('#opsStatus')).toContainText('Loaded.');
+  expect(await page.locator('#leads img, #funnel img').count()).toBe(0);
+  expect(await page.evaluate(() => Boolean(window.__amanikahInjected))).toBe(false);
+  expect(await page.evaluate(() => sessionStorage.getItem('amanikah.ops.token'))).toBeNull();
+});
