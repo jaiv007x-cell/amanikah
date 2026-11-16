@@ -55,3 +55,8 @@ body.premium-home .film-caption{pointer-events:none}
 body.premium-home .story-hero-wrap::before{pointer-events:none!important}
 body.premium-home .story-hero-media{position:relative;z-index:2}
 body.premium-home #storyHeroPause{top:76px;right:18px;z-index:20;scroll-margin-top:140px}
+
+/* Clear, accessible film toggle placed outside the ornament's stacking context. */
+body.premium-home .hero-copy .hero-film-control{position:relative!important;display:inline-flex;align-items:center;justify-content:center;width:auto;height:auto;min-height:46px;padding:11px 20px;margin:9px 0 16px;top:auto!important;right:auto!important;z-index:4;border:1px solid #e6cf9a;border-radius:999px;background:#d9b66e;color:#083b30;font:700 15px "Source Sans 3",system-ui,sans-serif;cursor:pointer;letter-spacing:.01em;box-shadow:0 8px 20px #001e1438}
+body.premium-home .hero-copy .hero-film-control:hover{background:#f5d998}
+@media(max-width:400px){body.premium-home .hero-copy .hero-film-control{width:100%}}
