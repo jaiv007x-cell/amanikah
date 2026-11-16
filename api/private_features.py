@@ -118,7 +118,7 @@ class PrivateFeatures:
           "sent": [{"id":x["id"], "email":x["email"], "scopes":json.loads(x["scopes"]),
                     "accepted":bool(x["accepted_at"]), "revoked":bool(x["revoked_at"])} for x in out],
           "received": [{"id":x["id"], "ownerId":x["owner_id"],
-                        "scopes":json.loads(x["scopes"]), "accepted":bool(x["accepted_at"])} for x in incoming]}
+                        "scopes":json.loads(x["scopes"]), "accepted":bool(x["accepted_at"])} for x in incoming if not self.is_blocked(x["owner_id"],mid)]}
 
     def invite(self, mid, body):
         email = str(body.get("email") or "").lower().strip()
