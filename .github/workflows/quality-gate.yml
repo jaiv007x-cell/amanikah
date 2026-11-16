@@ -25,6 +25,9 @@ jobs:
           node --check site/js/interactive-film.js
           node --check site/js/simple-nikah.js
           node --check site/js/nikah-readiness.js
+          node --check site/js/ops/console.js
+          node --check site/js/community-interest.js
+          bash -n scripts/backup-amanikah-offsite-restic.sh
       - name: Verify static release scripts and current design markers
         run: |
           bash -n scripts/deploy-site-from-vps-github.sh
