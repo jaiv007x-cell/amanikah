@@ -43,6 +43,8 @@ test('free family guide renders three language choices without an account', asyn
 test('family studio refuses to expose tools when logged out', async ({page}) => {
   await page.goto(base + '/account/family.html');
   await expect(page.locator('#studio')).toBeHidden();
+  await expect(page.locator('#waliForm')).toHaveCount(1);
+  await expect(page.locator('#scopeWali')).toHaveCount(1);
   await expect(page.locator('#globalStatus')).toContainText('sign in');
 });
 test('public quiz and pledge routes load', async ({page}) => {
