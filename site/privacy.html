@@ -71,7 +71,7 @@
       <ul>
         <li><strong>Waitlist / tickets:</strong> name, email, city, preferences or message text, source/referral, timestamps — purpose: operator review and support/safety.</li>
         <li><strong>Production accounts:</strong> email, password hash, profile fields you enter, consent flags — purpose: authenticated membership.</li>
-        <li><strong>Private Family Studio:</strong> invited registered-member identifiers, permission scopes, acceptance/revocation/block records and private voice media only when used — purpose: consent-controlled participation.</li>
+        <li><strong>Private Family Studio and Wali Briefs:</strong> invited registered-member identifiers, permission scopes, acceptance/revocation/block records, member-written Wali Brief notes and private voice media only when used — purpose: consent-controlled family participation. Wali Briefs are private until an accepted, permission-scoped invitation allows a verified account to read them.</li>
         <li><strong>AI Family Assistant:</strong> per-request topic, language and optional note only when you actively enable AI for that request; usage timestamps for rate limits.</li>
         <li><strong>Demo membership:</strong> fictional local records only on your device.</li>
         <li><strong>Share links:</strong> preference-only payloads for unlisted #SimpleNikah links.</li>
@@ -81,6 +81,7 @@
       <p><strong>Operator decision still open:</strong> exact retention windows for waitlist notes, ticket bodies, and deletion audit rows should be confirmed before claiming a specific number of days.</p>
 
       <h2>Family tools and optional AI</h2>
+      <p>Your Wali Brief is written by you and stored in your private account. It is not independently checked. You can edit or delete the brief, and remove a family member’s access at any time. Deleting your account or withdrawing consent also removes the brief from the active database. People you have allowed to read it may still have made their own copies; off-server backup retention needs an operator policy before broad launch.</p>
       <p>The production Family Studio, when deployed, stores invitations, the limited fields you select for sharing, each recipients acceptance or decline, revocation and blocking state. Neither a family invitation nor payment gives anyone your private profile without your permission. Members may report abusive voice content for authorized human review.</p>
       <p>Guided conversation questions work without an AI vendor. If an administrator enables AI and you individually opt in to a request, the selected discussion topic, language and optional note you type are sent to the configured OpenAI Responses API. Profile fields, identity documents, audio and other relatives data are not added automatically. Do not include another persons private details in an optional note. AI answers are advisory text, not religious rulings, suitability predictions or verified claims. Provider processing is governed by the providers applicable terms and privacy practices. If the API key is absent, the service gives a clear unavailable response instead of silently sending data elsewhere.</p>
 
