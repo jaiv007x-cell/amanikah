@@ -90,7 +90,22 @@
            var play=document.createElement("button");play.textContent="Play authorized voice";play.className="secondary";
            play.onclick=async function(){await fetchVoice("/me/voice/received/"+encodeURIComponent(item.ownerId));};
            li.appendChild(play);
+           var report=document.createElement("button");report.textContent="Report recording";report.className="secondary";
+           report.onclick=async function(){
+             var reason=prompt("Describe why this recording should be reviewed (at least 20 characters).");
+             if(!reason)return;
+             try{
+               var feedback=await jsonApi("/me/voice/report",{memberId:item.ownerId,reason:reason});
+               say("familyStatus","Safety report accepted. Reference: "+(feedback.reference||"pending"));
+             }catch(e){say("familyStatus",e.message);}
+           };li.appendChild(report);
          }
+         var block=document.createElement("button");block.textContent="Block member";block.className="secondary";
+         block.onclick=async function(){
+           if(!confirm("Block this member and immediately prevent mutual family access?"))return;
+           try{await jsonApi("/me/family/block",{memberId:item.ownerId});say("familyStatus","Member blocked.");await refreshFamily();}
+           catch(e){say("familyStatus",e.message);}
+         };li.appendChild(block);
        }
        inbox.appendChild(li);
      });
