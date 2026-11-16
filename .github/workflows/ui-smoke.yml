@@ -19,7 +19,7 @@ jobs:
           python-version: '3.12'
       - name: Install Playwright
         run: |
-          npm install --no-save @playwright/test
+          npm install --no-save @playwright/test @axe-core/playwright
           npx playwright install --with-deps chromium
       - name: Start isolated static web server
         run: |
@@ -27,7 +27,7 @@ jobs:
           sleep 3
           curl -fsS http://127.0.0.1:8765/ > /dev/null
       - name: Run actual Chromium interaction checks
-        run: npx playwright test site/tests/ui-smoke.spec.cjs --reporter=line
+        run: npx playwright test site/tests/ui-smoke.spec.cjs site/tests/a11y-smoke.spec.cjs --reporter=line
       - name: Capture screenshot artifacts
         if: always()
         uses: actions/upload-artifact@v4
