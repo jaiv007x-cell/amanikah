@@ -100,14 +100,17 @@
     loadCatalog().then(function (catalog) {
       root.innerHTML = notice(catalog) +
         '<div class="prices">' +
-        '<article class="price"><h2>' + esc(catalog.free.name) + '</h2><p class="fee">No fee</p>' + list(catalog.free.includes) +
+        '<article class="price" id="free-membership"><h2>' + esc(catalog.free.name) + '</h2><p class="fee">No fee</p>' + list(catalog.free.includes) +
         '<p><a class="btn btn-emerald" href="/account/register.html">Create a private profile</a></p></article>' +
         catalog.services.map(function (service) {
-          return '<article class="price"><h2>' + esc(service.name) + '</h2><p class="fee">' + esc(money(service.pricePaise, catalog.currency)) + '</p><p>' + esc(service.summary) + '</p>' +
+          return '<article class="price" id="' + esc(service.id) + '"><h2>' + esc(service.name) + '</h2><p class="fee">' + esc(money(service.pricePaise, catalog.currency)) + '</p><p>' + esc(service.summary) + '</p>' +
             '<p><a class="btn btn-ghost" href="/services/#' + esc(service.id) + '">What is and is not included</a></p></article>';
         }).join("") +
         "</div>";
-    }).catch(function (err) { root.innerHTML = '<p class="err">' + esc(err.message) + "</p>"; });
+    }).catch(function () {
+      // The server-rendered catalog remains available during API or JS failures.
+      root.insertAdjacentHTML("afterbegin", '<p class="notice" role="status">The live catalog could not be refreshed. Example prices below are not available for purchase.</p>');
+    });
   }
 
   function renderServices(root) {
