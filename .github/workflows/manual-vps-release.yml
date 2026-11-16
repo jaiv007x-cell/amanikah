@@ -1,0 +1,71 @@
+name: Amanikah VPS release (manual, gated)
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DEPLOY to release the reviewed main branch'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: amanikah-production-release
+  cancel-in-progress: false
+jobs:
+  quality:
+    if: github.ref_name == 'main' && inputs.confirmation == 'DEPLOY'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg rsync
+      - name: Tests
+        run: |
+          python -m unittest discover -s api/tests -v
+          python -m compileall -q api
+          node --check site/js/account-family-studio.js
+          node --check site/js/interactive-film.js
+      - name: Confirm film exists
+        run: |
+          test -s site/images/film/amanikah-story-30s.mp4
+          ffprobe -v error -show_entries format=duration -of default=nw=1 site/images/film/amanikah-story-30s.mp4
+  deploy:
+    needs: quality
+    environment: production
+    runs-on: ubuntu-latest
+    env:
+      AMANIKAH_VPS_HOST: ${{ secrets.AMANIKAH_VPS_HOST }}
+      AMANIKAH_VPS_USER: ${{ secrets.AMANIKAH_VPS_USER }}
+      AMANIKAH_VPS_KEY: ${{ secrets.AMANIKAH_VPS_KEY }}
+      AMANIKAH_SSH_KNOWN_HOSTS: ${{ secrets.AMANIKAH_SSH_KNOWN_HOSTS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check required server credentials
+        run: |
+          test -n "$AMANIKAH_VPS_HOST" || { echo 'Missing AMANIKAH_VPS_HOST'; exit 1; }
+          test -n "$AMANIKAH_VPS_USER" || { echo 'Missing AMANIKAH_VPS_USER'; exit 1; }
+          test -n "$AMANIKAH_VPS_KEY" || { echo 'Missing AMANIKAH_VPS_KEY'; exit 1; }
+          test -n "$AMANIKAH_SSH_KNOWN_HOSTS" || { echo 'Missing AMANIKAH_SSH_KNOWN_HOSTS'; exit 1; }
+      - name: Prepare SSH with pinned host key
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$AMANIKAH_VPS_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$AMANIKAH_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+      - name: Transfer reviewed code and run safe release
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH=(ssh -o StrictHostKeyChecking=yes -i ~/.ssh/id_deploy)
+          REMOTE="$AMANIKAH_VPS_USER@$AMANIKAH_VPS_HOST"
+          STAGE=$("${SSH[@]}" "$REMOTE" 'umask 077; mktemp -d /tmp/amanikah-release.XXXXXXXX')
+          rsync -az -e "ssh -o StrictHostKeyChecking=yes -i ~/.ssh/id_deploy" site api scripts "$REMOTE:$STAGE/"
+          "${SSH[@]}" "$REMOTE" "if [ \$(id -u) -eq 0 ]; then RELEASE_ROOT='$STAGE' bash '$STAGE/scripts/deploy-amanikah-production.sh'; else sudo -n env RELEASE_ROOT='$STAGE' bash '$STAGE/scripts/deploy-amanikah-production.sh'; fi"
+          "${SSH[@]}" "$REMOTE" "rm -rf '$STAGE'"
