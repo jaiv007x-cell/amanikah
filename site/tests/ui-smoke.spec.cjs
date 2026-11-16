@@ -4,7 +4,7 @@ test('homepage hierarchy, video user control and CTA', async ({ page }) => {
   test.setTimeout(50000);
   await page.goto(base + '/');
   await expect(page.locator('main h1')).toContainText('A simple, respectful start');
-  await expect(page.locator('a[href="/account/register.html"]').first()).toBeVisible();
+  await expect(page.locator('a[href="/signup.html"]').first()).toBeVisible();
   const video = page.locator('#storyHeroVideo');
   await expect(video).toBeVisible();
   await expect.poll(() => video.evaluate(v => !v.paused), { timeout: 12000 }).toBe(true);
@@ -62,7 +62,7 @@ test('short homepage keeps the main journey, NRI target and simple free tools', 
   await expect(page.locator('#trust')).toHaveCount(1);
   await expect(page.locator('#questions details')).toHaveCount(3);
   await expect(page.locator('main section')).toHaveCount(6);
-  await expect(page.locator('a[href="/account/register.html"]').first()).toBeVisible();
+  await expect(page.locator('a[href="/signup.html"]').first()).toBeVisible();
   await expect(page.locator('#experiences')).toContainText('No payment needed');
   expect(await page.evaluate(() => [...document.querySelectorAll('a[href^="/#"]')]
      .every(a => document.querySelector(a.getAttribute('href').slice(1))))).toBe(true);
@@ -183,4 +183,58 @@ test('new scalable Amanikah emblem is visible throughout key pages', async ({pag
     const valid = await mark.first().evaluate(img=>img.complete && img.naturalWidth > 0 && img.naturalHeight > 0);
     expect(valid).toBe(true);
   }
+});
+
+
+test('operator console renders untrusted lead and funnel text without execution', async ({page}) => {
+  const attack = '<img src=x onerror="window.__amanikahInjected=1">';
+  await page.route('**/api/amanikah/ops/**', async route => {
+    const pathname = new URL(route.request().url()).pathname;
+    const key = pathname.split('/').pop();
+    const responses = {
+      dashboard: {ok:true,mode:'waitlist',matchmakingLive:false,mailConfigured:false,operatorEmailConfigured:false,payments:'sandbox',
+        leads:{new:1,contacted:0,qualified:0,converted:0,closed:0},
+        ticketsOpen:0,safetyOpen:0,members:0,casesOpen:0,verificationsOpen:0,fulfillmentQueued:0,
+        notificationsQueued:0,notificationsFailed:0,demoMembers:0},
+      leads:{ok:true,leads:[{id:'safe-id',reference:'AK-TEST',name:attack,email:'test@example.test',
+        city:attack,source:'test',status:'new',created_at:'2026-11-17'}]},
+      tickets:{ok:true,tickets:[]},cases:{ok:true,cases:[]},verifications:{ok:true,requests:[]},
+      fulfillment:{ok:true,items:[]},notifications:{ok:true,notifications:[]},
+      funnel:{ok:true,totals:{},membersProduction:0,note:attack,paymentsMode:'sandbox',
+        leadsBySourceStatus:[],leadsByDay:[]}
+    };
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(responses[key]||{ok:false})});
+  });
+  await page.goto(base+'/ops/');
+  await page.locator('#opsToken').fill('ci-test-token');
+  await page.locator('#loadBtn').click();
+  await expect(page.locator('#leads')).toContainText(attack);
+  await expect(page.locator('#funnel')).toContainText(attack);
+  await expect(page.locator('#opsStatus')).toContainText('Loaded.');
+  expect(await page.locator('#leads img, #funnel img').count()).toBe(0);
+  expect(await page.evaluate(() => Boolean(window.__amanikahInjected))).toBe(false);
+  expect(await page.evaluate(() => sessionStorage.getItem('amanikah.ops.token'))).toBeNull();
+});
+
+test('community pilot makes no endorsement or fundraising claims and stores a family inquiry', async ({page}) => {
+  await page.goto(base + '/community/');
+  await expect(page.locator('main')).toContainText('Planning stage only');
+  await expect(page.locator('main')).toContainText('No money is being accepted');
+  const family=page.locator('form[data-community-form="family"]');
+  await page.route('**/api/amanikah/tickets', async route => {
+    const posted=route.request().postDataJSON();
+    expect(posted.topic).toContain('family interest');
+    expect(posted.kind).toBe('support');
+    expect(posted.message).toContain('City/town: Hyderabad');
+    await route.fulfill({status:201,contentType:'application/json',
+      body:JSON.stringify({ok:true,reference:'SUP-TEST-001'})});
+  });
+  await family.locator('[name="name"]').fill('Pilot Tester');
+  await family.locator('[name="email"]').fill('pilot@example.test');
+  await family.locator('[name="city"]').fill('Hyderabad');
+  await family.locator('[name="note"]').fill('Please explain how a private community introduction would work.');
+  await family.locator('[name="consent"]').check();
+  await family.locator('button[type="submit"]').click();
+  await expect(family.locator('.status')).toContainText('SUP-TEST-001');
+  await expect(family.locator('.status')).toContainText('not a matchmaking registration');
 });

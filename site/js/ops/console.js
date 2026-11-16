@@ -1,6 +1,5 @@
 (function () {
   var API = "/api/amanikah/ops";
-  var tokenKey = "amanikah.ops.token";
   var statusEl = document.getElementById("opsStatus");
 
   function token() {
@@ -8,15 +7,11 @@
     return (input && input.value) || "";
   }
 
-  function saveToken() {
-    try { sessionStorage.setItem(tokenKey, token()); } catch (err) {}
-  }
-
-  function restoreToken() {
-    try {
-      var t = sessionStorage.getItem(tokenKey) || "";
-      if (t) document.getElementById("opsToken").value = t;
-    } catch (err) {}
+  // Never persist the operator's privileged token in browser storage.
+  function escapeHtml(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];
+    });
   }
 
   function call(path, options) {
@@ -36,57 +31,52 @@
     });
   }
 
-  function el(html) {
-    var d = document.createElement("div");
-    d.innerHTML = html;
-    return d.firstElementChild || d;
-  }
-
   function table(rows, cols, actions) {
     if (!rows || !rows.length) return "<p class='muted'>None.</p>";
-    var head = cols.map(function (c) { return "<th>" + c.label + "</th>"; }).join("") + (actions ? "<th></th>" : "");
+    var head = cols.map(function (c) { return "<th>" + escapeHtml(c.label) + "</th>"; }).join("") + (actions ? "<th></th>" : "");
     var body = rows.map(function (row) {
       var cells = cols.map(function (c) {
         var v = row[c.key];
-        if (c.key === "status") v = "<span class='pill'>" + (v || "") + "</span>";
-        return "<td>" + (v == null ? "" : String(v)) + "</td>";
+        if (c.key === "status") v = "<span class='pill'>" + escapeHtml(v) + "</span>";
+        else v = escapeHtml(v);
+        return "<td>" + v + "</td>";
       }).join("");
       var act = actions ? "<td>" + actions(row) + "</td>" : "";
-      return "<tr data-id='" + row.id + "'>" + cells + act + "</tr>";
+      return "<tr data-id='" + escapeHtml(row.id) + "'>" + cells + act + "</tr>";
     }).join("");
     return "<table><thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table>";
   }
 
   function leadActions(row) {
-    return "<select class='inline' data-lead-status='" + row.id + "'>" +
+    return "<select class='inline' data-lead-status='" + escapeHtml(row.id) + "'>" +
       ["new", "contacted", "qualified", "converted", "closed"].map(function (s) {
         return "<option value='" + s + "'" + (s === row.status ? " selected" : "") + ">" + s + "</option>";
       }).join("") + "</select>";
   }
 
   function ticketActions(row) {
-    return "<select class='inline' data-ticket-status='" + row.id + "'>" +
+    return "<select class='inline' data-ticket-status='" + escapeHtml(row.id) + "'>" +
       ["new", "acknowledged", "in_progress", "resolved", "closed"].map(function (s) {
         return "<option value='" + s + "'" + (s === row.status ? " selected" : "") + ">" + s + "</option>";
       }).join("") + "</select>";
   }
 
   function caseActions(row) {
-    return "<select class='inline' data-case-status='" + row.id + "'>" +
+    return "<select class='inline' data-case-status='" + escapeHtml(row.id) + "'>" +
       ["draft", "open", "mutual", "paused", "closed"].map(function (s) {
         return "<option value='" + s + "'" + (s === row.status ? " selected" : "") + ">" + s + "</option>";
       }).join("") + "</select>";
   }
 
   function verActions(row) {
-    return "<select class='inline' data-ver-status='" + row.id + "'>" +
+    return "<select class='inline' data-ver-status='" + escapeHtml(row.id) + "'>" +
       ["requested", "in_review", "completed", "unable", "cancelled"].map(function (s) {
         return "<option value='" + s + "'" + (s === row.status ? " selected" : "") + ">" + s + "</option>";
       }).join("") + "</select>";
   }
 
   function fulActions(row) {
-    return "<select class='inline' data-ful-status='" + row.id + "'>" +
+    return "<select class='inline' data-ful-status='" + escapeHtml(row.id) + "'>" +
       ["queued", "in_progress", "delivered", "blocked", "cancelled"].map(function (s) {
         return "<option value='" + s + "'" + (s === row.status ? " selected" : "") + ">" + s + "</option>";
       }).join("") + "</select>";
@@ -109,7 +99,6 @@
       statusEl.textContent = "Enter the ops token.";
       return;
     }
-    saveToken();
     statusEl.textContent = "Loading…";
     Promise.all([
       call("/dashboard"),
@@ -135,19 +124,19 @@
       var dashEl = document.getElementById("dash");
       dashEl.hidden = false;
       dashEl.innerHTML =
-        "<p><span class='pill'>" + (d.mode || "") + "</span> " +
-        "matchmakingLive=" + d.matchmakingLive +
-        " · mailConfigured=" + d.mailConfigured +
-        " · operatorEmailConfigured=" + d.operatorEmailConfigured +
-        " · payments=" + d.payments + "</p>" +
+        "<p><span class='pill'>" + escapeHtml(d.mode) + "</span> " +
+        "matchmakingLive=" + escapeHtml(d.matchmakingLive) +
+        " · mailConfigured=" + escapeHtml(d.mailConfigured) +
+        " · operatorEmailConfigured=" + escapeHtml(d.operatorEmailConfigured) +
+        " · payments=" + escapeHtml(d.payments) + "</p>" +
         "<p>Leads new/contacted/qualified/converted/closed: " +
-        [d.leads.new, d.leads.contacted, d.leads.qualified, d.leads.converted, d.leads.closed].join(" / ") +
-        " · tickets open " + d.ticketsOpen + " · safety open " + d.safetyOpen +
-        " · members " + d.members + " · cases " + d.casesOpen +
-        " · verifications " + d.verificationsOpen +
-        " · fulfillment " + d.fulfillmentQueued +
-        " · notify queued/failed " + d.notificationsQueued + "/" + d.notificationsFailed +
-        " · demoMembers(excluded) " + d.demoMembers + "</p>";
+        [d.leads.new, d.leads.contacted, d.leads.qualified, d.leads.converted, d.leads.closed].map(escapeHtml).join(" / ") +
+        " · tickets open " + escapeHtml(d.ticketsOpen) + " · safety open " + escapeHtml(d.safetyOpen) +
+        " · members " + escapeHtml(d.members) + " · cases " + escapeHtml(d.casesOpen) +
+        " · verifications " + escapeHtml(d.verificationsOpen) +
+        " · fulfillment " + escapeHtml(d.fulfillmentQueued) +
+        " · notify queued/failed " + escapeHtml(d.notificationsQueued) + "/" + escapeHtml(d.notificationsFailed) +
+        " · demoMembers(excluded) " + escapeHtml(d.demoMembers) + "</p>";
 
       var funnelPanel = document.getElementById("funnelPanel");
       var funnelRoot = document.getElementById("funnel");
@@ -162,9 +151,9 @@
           "checkout_started", "payment_confirmed", "service_fulfilled", "refund_completed",
         ];
         funnelRoot.innerHTML =
-          "<p>" + keys.map(function (k) { return k + "=" + (t[k] || 0); }).join(" · ") + "</p>" +
-          "<p class='muted'>Production members (period): " + (funnel.membersProduction || 0) +
-          ". " + (funnel.note || "") + " paymentsMode=" + (funnel.paymentsMode || "") + "</p>" +
+          "<p>" + keys.map(function (k) { return escapeHtml(k) + "=" + escapeHtml(t[k] || 0); }).join(" · ") + "</p>" +
+          "<p class='muted'>Production members (period): " + escapeHtml(funnel.membersProduction || 0) +
+          ". " + escapeHtml(funnel.note || "") + " paymentsMode=" + escapeHtml(funnel.paymentsMode || "") + "</p>" +
           table(funnel.leadsBySourceStatus || [], [
             { key: "source", label: "Source" },
             { key: "status", label: "Status" },
@@ -241,7 +230,6 @@
 
   document.getElementById("loadBtn").addEventListener("click", loadAll);
   document.getElementById("clearBtn").addEventListener("click", function () {
-    try { sessionStorage.removeItem(tokenKey); } catch (err) {}
     document.getElementById("opsToken").value = "";
     statusEl.textContent = "Token cleared.";
   });
@@ -282,6 +270,4 @@
     });
   });
 
-  restoreToken();
-  if (token()) loadAll();
 })();
