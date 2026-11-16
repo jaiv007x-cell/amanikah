@@ -66,7 +66,7 @@ test('short homepage keeps the main journey, NRI target and simple free tools', 
   await expect(page.locator('#experiences')).toContainText('No payment needed');
   expect(await page.evaluate(() => [...document.querySelectorAll('a[href^="/#"]')]
      .every(a => document.querySelector(a.getAttribute('href').slice(1))))).toBe(true);
-  const words = await page.locator('main').evaluate(el => el.textContent.trim().split(/\\s+/).length);
+  const words = await page.locator('main').evaluate(el => el.textContent.trim().split(/\s+/).length);
   expect(words).toBeLessThan(650);
 });
 test('live marketing pages offer real accounts without stale demo copy', async ({page}) => {
