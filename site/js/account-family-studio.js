@@ -19,6 +19,45 @@
  async function jsonApi(path,body){
    return api(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{})});
  }
+ var waliFields={
+   marriageGoals:"waliGoals",familyExpectations:"waliFamily",livingPlans:"waliLiving",
+   weddingExpectations:"waliWedding",questions:"waliQuestions"
+ };
+ var waliLabels={
+   marriageGoals:"Marriage hopes",familyExpectations:"Family participation",
+   livingPlans:"Home, work and relocation",weddingExpectations:"Mahr and nikah plans",
+   questions:"Questions to discuss"
+ };
+ async function refreshWaliBrief(){
+   try{
+     var response=await api("/me/family/brief");
+     Object.keys(waliFields).forEach(function(k){$(waliFields[k]).value=(response.brief||{})[k]||"";});
+     say("waliStatus",response.updatedAt?
+       "Your private brief is saved. Only a trusted person you explicitly invite with Wali Brief permission can read it.":
+       "No brief saved yet. Nothing is shared.");
+   }catch(e){say("waliStatus","Could not load your private brief: "+e.message);}
+ }
+ async function saveWaliBrief(){
+   var brief={};
+   Object.keys(waliFields).forEach(function(k){brief[k]=$(waliFields[k]).value.trim();});
+   $("saveWali").disabled=true;
+   try{
+     await jsonApi("/me/family/brief",{brief:brief});
+     say("waliStatus","Saved privately. You control who can read this brief.");
+   }catch(e){say("waliStatus",e.message);}
+   finally{$("saveWali").disabled=false;}
+ }
+ $("waliForm").addEventListener("submit",function(event){event.preventDefault();saveWaliBrief();});
+ $("removeWali").addEventListener("click",async function(){
+   if(!confirm("Delete your Wali Brief? Anyone previously invited will no longer be able to read it."))return;
+   $("removeWali").disabled=true;
+   try{
+     await jsonApi("/me/family/brief/delete",{});
+     Object.values(waliFields).forEach(function(id){$(id).value="";});
+     say("waliStatus","Your Wali Brief was deleted.");
+   }catch(e){say("waliStatus",e.message);}
+   finally{$("removeWali").disabled=false;}
+ });
  async function init(){
    if(!token){globals.textContent="Please sign in and verify your email before using these private tools.";return;}
    try{
@@ -26,7 +65,7 @@
      if(!me.member || !me.member.emailVerified || (me.member.consent&&me.member.consent.withdrawn))throw new Error("Verified consent is required.");
      globals.textContent="Signed in as "+me.member.email+" · Information stays private until you authorize sharing.";
      studio.hidden=false;
-     await Promise.all([refreshFamily(),refreshVoice()]);
+     await Promise.all([refreshFamily(),refreshVoice(),refreshWaliBrief()]);
    }catch(e){globals.textContent="Private workspace unavailable: "+e.message;}
  }
  $("ask").addEventListener("click",async function(){
@@ -42,6 +81,7 @@
      say("guideStatus",(reply.mode==="ai_generated"?"AI-generated discussion prompts. ":"Guided checklist (not AI). ")+(reply.notice||""));
    }catch(e){say("guideStatus",e.message);}
    $("ask").disabled=false;
+   $("aiConsent").checked=false; // Consent must be chosen anew for each AI request.
  });
  $("copyGuide").addEventListener("click",async function(){
    try{await navigator.clipboard.writeText($("guideOutput").textContent);say("guideStatus","Copied.");}
@@ -81,7 +121,14 @@
            try{
              var r=await api("/me/family/shared/"+encodeURIComponent(item.ownerId));
              var out=["Details shared with your permission:"];
-             Object.keys(r.shared||{}).forEach(function(k){out.push(k+": "+r.shared[k]);});
+             Object.keys(r.shared||{}).forEach(function(k){
+               if(k==="waliBrief"){
+                 out.push("Wali Brief (written by member; not independently checked):");
+                 Object.keys(waliLabels).forEach(function(field){
+                   if(r.shared.waliBrief[field])out.push(waliLabels[field]+": "+r.shared.waliBrief[field]);
+                 });
+               }else{out.push(k+": "+r.shared[k]);}
+             });
              if(r.voiceAvailable){out.push("Voice permission granted; authorized playback available through your browser.");}
              $("sharedInfo").textContent=out.join("\n")||"No details shared.";
            }catch(e){$("sharedInfo").textContent=e.message;}
@@ -116,6 +163,7 @@
    if($("scopeCity").checked)scopes.push("city");
    if($("scopeIntentions").checked)scopes.push("intentions");
    if($("scopeVoice").checked)scopes.push("voice");
+   if($("scopeWali").checked)scopes.push("wali_brief");
    if(!scopes.length){say("familyStatus","Select at least one permission.");return;}
    try{var r=await jsonApi("/me/family/invite",{email:$("familyEmail").value,scopes:scopes});
        say("familyStatus",r.message||"Invitation submitted.");await refreshFamily();}
