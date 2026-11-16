@@ -75,6 +75,8 @@ install -m 600 "$RELEASE_ROOT/api/server.py" "$APP_DIR/server.py"
 install -m 600 "$RELEASE_ROOT/api/private_features.py" "$APP_DIR/private_features.py"
 install -m 644 "$RELEASE_ROOT/api/Dockerfile" "$APP_DIR/Dockerfile"
 install -m 644 "$RELEASE_ROOT/api/docker-compose.yml" "$APP_DIR/docker-compose.yml"
+# Install encrypted remote-backup helper, but never run it without private offsite credentials.
+install -m 700 "$RELEASE_ROOT/scripts/backup-amanikah-offsite-restic.sh" "$APP_DIR/backup-amanikah-offsite-restic.sh"
 # Never overwrite ops.env from the release tree.
 cd "$APP_DIR"
 docker compose config -q
