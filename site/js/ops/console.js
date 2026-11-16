@@ -1,6 +1,8 @@
 (function () {
   var API = "/api/amanikah/ops";
   var statusEl = document.getElementById("opsStatus");
+  // Remove a token persisted by the old operator console version.
+  try { sessionStorage.removeItem("amanikah.ops.token"); } catch (err) {}
 
   function token() {
     var input = document.getElementById("opsToken");
