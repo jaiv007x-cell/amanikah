@@ -3,7 +3,7 @@ const base = 'http://127.0.0.1:8765';
 test('homepage hierarchy, video user control and CTA', async ({ page }) => {
   test.setTimeout(50000);
   await page.goto(base + '/');
-  await expect(page.locator('main h1')).toContainText('For a meaningful');
+  await expect(page.locator('main h1')).toContainText('A simple, respectful start');
   await expect(page.locator('a[href="/account/register.html"]').first()).toBeVisible();
   const video = page.locator('#storyHeroVideo');
   await expect(video).toBeVisible();
@@ -54,16 +54,20 @@ test('public quiz and pledge routes load', async ({page}) => {
   await expect(page.locator('main')).toBeVisible();
 });
 
-test('homepage consolidates repeated messaging and has a real NRI target', async ({page}) => {
+test('short homepage keeps the main journey, NRI target and simple free tools', async ({page}) => {
   await page.goto(base + '/');
   await expect(page.locator('#nri')).toHaveCount(1);
-  await expect(page.locator('.an-focus-panel')).toBeVisible();
-  await expect(page.locator('.an-membership-section')).toHaveCount(1);
-  await expect(page.locator('.an-launch-tools')).toHaveCount(0);
-  await expect(page.locator('#approach')).toHaveCount(1);
+  await expect(page.locator('#approach .home-step')).toHaveCount(3);
+  await expect(page.locator('#experiences .home-tool')).toHaveCount(2);
+  await expect(page.locator('#trust')).toHaveCount(1);
+  await expect(page.locator('#questions details')).toHaveCount(3);
+  await expect(page.locator('main section')).toHaveCount(6);
   await expect(page.locator('a[href="/account/register.html"]').first()).toBeVisible();
+  await expect(page.locator('#experiences')).toContainText('No payment needed');
   expect(await page.evaluate(() => [...document.querySelectorAll('a[href^="/#"]')]
      .every(a => document.querySelector(a.getAttribute('href').slice(1))))).toBe(true);
+  const words = await page.locator('main').evaluate(el => el.textContent.trim().split(/\\s+/).length);
+  expect(words).toBeLessThan(650);
 });
 test('live marketing pages offer real accounts without stale demo copy', async ({page}) => {
   for(const p of ['/simple-nikah/','/nikah-readiness/','/account/register.html','/account/login.html']) {
@@ -88,4 +92,15 @@ test('hero film remains an optional path and never autoplays or forces speed',as
   await expect(page.locator('#storySpeed')).toHaveCount(0);
   await expect(page.locator('#storyHeroPause')).toBeVisible();
   await expect(page.locator('a[href="/nikah-readiness/"]').first()).toBeVisible();
+});
+
+test('homepage uses short, welcoming language without false live claims', async ({page}) => {
+  await page.goto(base + '/');
+  await expect(page.locator('h1')).toContainText('Nikah');
+  await expect(page.locator('#approach')).toContainText('There is no rush');
+  await expect(page.locator('#trust')).toContainText('Your choice matters');
+  await expect(page.locator('#questions')).toContainText('Not yet');
+  await expect(page.locator('.home-free a[href="/simple-nikah/"]')).toBeVisible();
+  await expect(page.locator('.home-free a[href="/nikah-readiness/"]')).toBeVisible();
+  await expect(page.locator('link[href*="short-home-2026.css"]')).toHaveCount(1);
 });
