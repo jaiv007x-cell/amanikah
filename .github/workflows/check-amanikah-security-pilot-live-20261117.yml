@@ -1,0 +1,71 @@
+name: One-time verify Amanikah security and community pilot live
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/check-amanikah-security-pilot-live-20261117.yml'
+permissions:
+  contents: read
+jobs:
+  public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Test live public endpoints, security boundaries and no-fundraising copy
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          BASE=https://amanikah.com
+          curl -fsS --max-time 20 "$BASE/api/amanikah/health" -o /tmp/health.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/health.json'))
+          assert d.get('ok') is True
+          assert d.get('waitlistMode') is True
+          assert d.get('matchmakingLive') is False
+          assert d.get('mailConfigured') is False
+          print('PASS live API safe early-access settings')
+          PY
+          for path in /api/amanikah/me/family/brief /api/amanikah/me/voice /api/amanikah/ops/dashboard; do
+            code=$(curl -s --max-time 20 -o /dev/null -w '%{http_code}' "$BASE$path")
+            test "$code" = 401 || { echo "FAIL unauthorized route $path returned $code"; exit 1; }
+            echo "PASS private route denies anonymous access"
+          done
+          curl -fsS --max-time 20 "$BASE/js/ops/console.js?audit=20261117" -o /tmp/ops.js
+          grep -q 'function escapeHtml' /tmp/ops.js
+          grep -q 'removeItem("amanikah.ops.token")' /tmp/ops.js
+          echo 'PASS operator XSS encoding and legacy token cleanup deployed'
+          curl -fsS --max-time 20 "$BASE/community/" -o /tmp/community.html
+          grep -q 'Planning stage only' /tmp/community.html
+          grep -q 'No money is being accepted' /tmp/community.html
+          grep -q 'data-community-form="coordinator"' /tmp/community.html
+          curl -fsS --max-time 20 "$BASE/js/community-interest.js" -o /tmp/community.js
+          grep -q '/api/amanikah/tickets' /tmp/community.js
+          echo 'PASS community interest pilot page and backend ticket wiring published'
+          curl -fsS --max-time 20 "$BASE/" -o /tmp/home.html
+          grep -q 'Join early access' /tmp/home.html
+          curl -fsS --max-time 20 "$BASE/account/register.html" -o /tmp/register.html
+          grep -q 'Account registration is paused' /tmp/register.html
+          echo 'PASS no misleading open-registration claim'
+  vps-readonly:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 6
+    env:
+      AMANIKAH_VPS_HOST: ${{ secrets.AMANIKAH_VPS_HOST }}
+      AMANIKAH_VPS_USER: ${{ secrets.AMANIKAH_VPS_USER }}
+      AMANIKAH_VPS_KEY: ${{ secrets.AMANIKAH_VPS_KEY }}
+      AMANIKAH_SSH_KNOWN_HOSTS: ${{ secrets.AMANIKAH_SSH_KNOWN_HOSTS }}
+    steps:
+      - name: Verify installed backup helper without exporting member data
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$AMANIKAH_VPS_KEY" > ~/.ssh/id_deploy
+          printf '%s\n' "$AMANIKAH_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_deploy ~/.ssh/known_hosts
+          REMOTE="$AMANIKAH_VPS_USER@$AMANIKAH_VPS_HOST"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i ~/.ssh/id_deploy "$REMOTE" \
+            'if [ "$(id -u)" -eq 0 ]; then test -x /root/amanikah-api/backup-amanikah-offsite-restic.sh && test -d /root/amanikah-api/backups; else sudo -n test -x /root/amanikah-api/backup-amanikah-offsite-restic.sh && sudo -n test -d /root/amanikah-api/backups; fi'
+          echo 'PASS backup helper installed on VPS; offsite repository requires separate provisioning'
