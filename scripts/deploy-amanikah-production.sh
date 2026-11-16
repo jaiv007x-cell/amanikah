@@ -13,9 +13,16 @@ ENV_FILE="$APP_DIR/ops.env"
 [[ -f "$RELEASE_ROOT/api/Dockerfile" && -f "$RELEASE_ROOT/api/docker-compose.yml" ]] || { echo INVALID_RELEASE; exit 1; }
 [[ -f "$ENV_FILE" ]] || { echo MISSING_VPS_OPS_ENV; exit 1; }
 # Production mail gates — do not invent credentials.
-grep -Eq '^OPERATOR_EMAIL=[^[:space:]]+@[^[:space:]]+' "$ENV_FILE" || { echo OPERATOR_EMAIL_NOT_CONFIGURED; exit 1; }
-if ! grep -Eq '^RESEND_API_KEY=[^[:space:]]+' "$ENV_FILE" && ! grep -Eq '^SMTP_HOST=[^[:space:]]+' "$ENV_FILE"; then
-  echo TRANSACTIONAL_MAIL_NOT_CONFIGURED; exit 1
+# Operator may set AMANIKAH_ALLOW_MAIL_SKIP=1 only with explicit DEPLOY APPROVED
+# when transactional email is still being configured; verification mail will remain broken.
+MAIL_SKIP="${AMANIKAH_ALLOW_MAIL_SKIP:-0}"
+if [[ "$MAIL_SKIP" != "1" ]]; then
+  grep -Eq '^OPERATOR_EMAIL=[^[:space:]]+@[^[:space:]]+' "$ENV_FILE" || { echo OPERATOR_EMAIL_NOT_CONFIGURED; exit 1; }
+  if ! grep -Eq '^RESEND_API_KEY=[^[:space:]]+' "$ENV_FILE" && ! grep -Eq '^SMTP_HOST=[^[:space:]]+' "$ENV_FILE"; then
+    echo TRANSACTIONAL_MAIL_NOT_CONFIGURED; exit 1
+  fi
+else
+  echo "WARNING: AMANIKAH_ALLOW_MAIL_SKIP=1 — deploying without transactional email smoke test"
 fi
 [[ -d "$SITE_DIR" ]] || { echo SITE_DIR_MISSING; exit 1; }
 command -v rsync >/dev/null
@@ -91,7 +98,11 @@ curl -fsS --max-time 15 -o /dev/null https://amanikah.com/images/film/amanikah-s
 VOICE_STATUS=$(curl -s --max-time 15 -o /dev/null -w '%{http_code}' https://amanikah.com/api/amanikah/me/voice)
 [[ "$VOICE_STATUS" == 401 ]] || { echo PRIVATE_VOICE_ROUTE_EXPOSED; exit 1; }
 # Real transactional mail smoke — fails the release if inbox delivery is broken.
-docker exec amanikah-api python -c "import os; from server import Mailer; c=dict(os.environ); m=Mailer(c); r=m.send(c.get('OPERATOR_EMAIL',''),'Amanikah deployment smoke test','Production API deployed. This message tests transactional email.'); assert r.get('ok'), r.get('code','delivery failed')"
+if [[ "$MAIL_SKIP" != "1" ]]; then
+  docker exec amanikah-api python -c "import os; from server import Mailer; c=dict(os.environ); m=Mailer(c); r=m.send(c.get('OPERATOR_EMAIL',''),'Amanikah deployment smoke test','Production API deployed. This message tests transactional email.'); assert r.get('ok'), r.get('code','delivery failed')"
+else
+  echo "EMAIL_SMOKE_SKIPPED — configure OPERATOR_EMAIL + Resend/SMTP, then retest delivery"
+fi
 trap - ERR
 echo "DEPLOYMENT_COMPLETE_$NOW"
 echo "Backups retained at $BACKUPS; confirm operator inbox and signed-in flow."
