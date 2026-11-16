@@ -50,3 +50,8 @@ body.premium-home .an-launch-card .button{margin-top:14px}
 body.premium-home [hidden]{display:none!important}
 body.premium-home .story-media-control{z-index:12;pointer-events:auto}
 body.premium-home .film-caption{pointer-events:none}
+
+/* A decorative arch must never intercept hero video controls. */
+body.premium-home .story-hero-wrap::before{pointer-events:none!important}
+body.premium-home .story-hero-media{position:relative;z-index:2}
+body.premium-home #storyHeroPause{top:76px;right:18px;z-index:20;scroll-margin-top:140px}
