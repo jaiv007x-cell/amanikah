@@ -12,6 +12,7 @@ CONFIG="${AMANIKAH_BACKUP_CONFIG:-/root/amanikah-backup/restic.env}"
 [[ -f "$CONFIG" && -O "$CONFIG" ]] || { echo "BACKUP_CONFIG_MISSING_OR_NOT_OWNED" >&2; exit 1; }
 # shellcheck disable=SC1090
 source "$CONFIG"
+export RESTIC_REPOSITORY RESTIC_PASSWORD_FILE
 : "${RESTIC_REPOSITORY:?RESTIC_REPOSITORY must be configured}"
 : "${RESTIC_PASSWORD_FILE:?RESTIC_PASSWORD_FILE must be configured}"
 case "$RESTIC_REPOSITORY" in
