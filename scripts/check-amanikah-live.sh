@@ -19,8 +19,12 @@ curl -fsSL --max-time 25 -H 'Cache-Control: no-cache' "$BASE/css/finish-2026.css
 test -s "$tmp/finish.css"
 curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' "$BASE/icon.svg?v=2" -o "$tmp/icon.svg"
 grep -q 'viewBox="0 0 128 128"' "$tmp/icon.svg" || { echo "NEW_LOGO_NOT_PUBLISHED"; exit 8; }
-curl -fsSL --max-time 45 -H 'Cache-Control: no-cache' "$BASE/images/film/amanikah-story-30s.mp4" -o "$tmp/film.mp4"
+curl -fsSL --max-time 45 -H 'Cache-Control: no-cache' "$BASE/images/film/amanikah-story-42s.mp4" -o "$tmp/film.mp4"
 test "$(wc -c < "$tmp/film.mp4")" -gt 100000
+if command -v ffprobe >/dev/null 2>&1; then
+  duration="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$tmp/film.mp4")"
+  python3 -c "import sys; d=float(sys.argv[1]); assert 41.8<=d<=42.2, f'film duration {d} is not 42s'" "$duration"
+fi
 status="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$BASE/api/amanikah/me/voice")"
 case "$status" in
   401) echo 'OK: unauthenticated private voice endpoint denied';;
