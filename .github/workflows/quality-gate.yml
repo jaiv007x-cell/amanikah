@@ -1,5 +1,7 @@
 name: Amanikah Quality Gate
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -8,7 +10,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Python tests
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install audio validator
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+      - name: Run Python component and real HTTP integration tests
         run: python -m unittest discover -s api/tests -v
-      - name: Syntax checks
+      - name: Check Python syntax
         run: python -m compileall -q api
+      - name: Check website JavaScript syntax
+        run: |
+          node --check site/js/account-family-studio.js
+          node --check site/js/interactive-film.js
+          node --check site/js/simple-nikah.js
+          node --check site/js/nikah-readiness.js
+      - name: Verify no exposed AI credentials in tracked env template
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("api/ops.env.example").read_text()
+          assert "OPENAI_API_KEY=" in p
+          assert "AMANIKAH_AI_ENABLED=0" in p
+          assert "MATCHMAKING_LIVE=0" in p
+          PY
