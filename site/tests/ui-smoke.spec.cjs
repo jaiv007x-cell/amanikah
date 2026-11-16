@@ -3,7 +3,7 @@ const base = 'http://127.0.0.1:8765';
 test('homepage hierarchy, video user control and CTA', async ({ page }) => {
   test.setTimeout(50000);
   await page.goto(base + '/');
-  await expect(page.locator('main h1')).toContainText('Your values');
+  await expect(page.locator('main h1')).toContainText('For a meaningful');
   await expect(page.locator('a[href="/account/register.html"]').first()).toBeVisible();
   const video = page.locator('#storyHeroVideo');
   await expect(video).toBeVisible();
@@ -52,4 +52,40 @@ test('public quiz and pledge routes load', async ({page}) => {
   await expect(page.locator('main')).toBeVisible();
   await page.goto(base + '/nikah-readiness/');
   await expect(page.locator('main')).toBeVisible();
+});
+
+test('homepage consolidates repeated messaging and has a real NRI target', async ({page}) => {
+  await page.goto(base + '/');
+  await expect(page.locator('#nri')).toHaveCount(1);
+  await expect(page.locator('.an-focus-panel')).toBeVisible();
+  await expect(page.locator('.an-membership-section')).toHaveCount(1);
+  await expect(page.locator('.an-launch-tools')).toHaveCount(0);
+  await expect(page.locator('#approach')).toHaveCount(1);
+  await expect(page.locator('a[href="/account/register.html"]').first()).toBeVisible();
+  expect(await page.evaluate(() => [...document.querySelectorAll('a[href^="/#"]')]
+     .every(a => document.querySelector(a.getAttribute('href').slice(1))))).toBe(true);
+});
+test('live marketing pages offer real accounts without stale demo copy', async ({page}) => {
+  for(const p of ['/simple-nikah/','/nikah-readiness/','/account/register.html','/account/login.html']) {
+    await page.goto(base+p);
+    await expect(page.locator('body')).not.toContainText('Registration is still device-local until accounts exist');
+    await expect(page.locator('body')).not.toContainText('Demo registration at /register');
+    await expect(page.locator('link[href*="clarity-2026.css"]')).toHaveCount(1);
+  }
+});
+test('pricing page exposes real free choice and clearly marks example paid prices',async({page})=>{
+  await page.goto(base + '/pricing/');
+  await expect(page.locator('h1')).toContainText('Start for free');
+  await expect(page.locator('#free-membership')).toBeVisible();
+  await expect(page.locator('main')).toContainText('indicative test prices');
+  await expect(page.locator('main')).toContainText('Paid services are not being sold yet');
+});
+test('hero film remains an optional path and never autoplays or forces speed',async({page})=>{
+  await page.goto(base + '/');
+  const v=page.locator('#storyHeroVideo');
+  expect(await v.evaluate(n=>n.autoplay)).toBe(false);
+  expect(await v.evaluate(n=>n.muted)).toBe(true);
+  await expect(page.locator('#storySpeed')).toHaveCount(0);
+  await expect(page.locator('#storyHeroPause')).toBeVisible();
+  await expect(page.locator('a[href="/nikah-readiness/"]').first()).toBeVisible();
 });
