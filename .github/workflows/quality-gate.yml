@@ -25,6 +25,15 @@ jobs:
           node --check site/js/interactive-film.js
           node --check site/js/simple-nikah.js
           node --check site/js/nikah-readiness.js
+      - name: Verify static release scripts and current design markers
+        run: |
+          bash -n scripts/deploy-site-from-vps-github.sh
+          bash -n scripts/check-amanikah-live.sh
+          grep -q 'A simple, respectful start' site/index.html
+          grep -q 'story-outside-disclosure' site/index.html
+          grep -q 'button-updates' site/index.html
+          test -s site/css/finish-2026.css
+          test -s site/icon.svg
       - name: Verify no exposed AI credentials in tracked env template
         run: |
           python3 - <<'PY'
