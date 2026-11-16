@@ -49,6 +49,20 @@ small,.muted{color:#536b5d}hr{border:0;border-top:1px solid #e1d3b7;margin:24px 
 <div class="actions"><button id="ask" type="button">Prepare my guide</button><button class="secondary" type="button" id="copyGuide" disabled>Copy</button></div>
 <div class="output" id="guideOutput" role="status" aria-live="polite">Your guide will appear here.</div><p class="status" id="guideStatus"></p>
 </section>
+<section class="card" aria-labelledby="waliTitle">
+<span class="kicker">Your words, your permission</span><h2 id="waliTitle">My Wali Brief</h2>
+<p class="muted">Write a short note for a trusted wali or family member. Only someone you invite, who accepts, and whom you allow to read this brief can see it. You can change or delete it at any time.</p>
+<p class="warning">This is your own account of your plans. Amanikah does not verify these answers, give fatwas, or decide whom you should marry. Please do not include another person's private details.</p>
+<form id="waliForm">
+<label for="waliGoals">What are you hoping for in marriage?</label><textarea id="waliGoals" maxlength="350" placeholder="A few words about your hopes and values"></textarea>
+<label for="waliFamily">How would you like family to be involved?</label><textarea id="waliFamily" maxlength="350" placeholder="When and how you welcome family support"></textarea>
+<label for="waliLiving">What should be discussed about home, work or relocation?</label><textarea id="waliLiving" maxlength="350" placeholder="Questions you want to discuss, not promises"></textarea>
+<label for="waliWedding">What are your hopes for mahr and a simple nikah?</label><textarea id="waliWedding" maxlength="350" placeholder="Preferences to discuss respectfully"></textarea>
+<label for="waliQuestions">What questions should your wali or family ask?</label><textarea id="waliQuestions" maxlength="350" placeholder="Up to 350 characters"></textarea>
+<div class="actions"><button id="saveWali" type="submit">Save private brief</button><button id="removeWali" class="secondary" type="button">Delete my brief</button></div>
+</form>
+<p class="status" id="waliStatus" role="status" aria-live="polite"></p>
+</section>
 <section class="card" aria-labelledby="voiceTitle">
 <span class="kicker">Only you and the people you authorize</span><h2 id="voiceTitle">Voice Rishta</h2>
 <p class="muted">Record a 30–45 second introduction. Microphone permission is requested only when you start recording. This recording is not shown publicly.</p>
@@ -66,6 +80,7 @@ small,.muted{color:#536b5d}hr{border:0;border-top:1px solid #e1d3b7;margin:24px 
 <label class="check"><input id="scopeCity" type="checkbox"> May see the city you provided</label>
 <label class="check"><input id="scopeIntentions" type="checkbox"> May see your self-reported marriage intentions</label>
 <label class="check"><input id="scopeVoice" type="checkbox"> May listen to your private voice introduction</label>
+<label class="check"><input id="scopeWali" type="checkbox"> May read my Wali Brief</label>
 <button id="invite" type="button">Send private invitation</button>
 <p id="familyStatus" class="status" role="status"></p>
 <h3>Your invitations</h3><ul id="sentList" class="list"></ul>

@@ -37,7 +37,7 @@ TOPICS_UR = {
  "decline": ["تعارف کے لیے شکریہ۔", "غور کرنے کے بعد میں یہ رشتہ آگے نہیں بڑھانا چاہتا/چاہتی۔", "نیک خواہشات؛ براہ کرم ذاتی معلومات خفیہ رکھیں۔"]
 }
 MIMES = {"audio/webm": ".webm", "audio/mp4": ".m4a", "audio/ogg": ".ogg"}
-SCOPES = {"city", "intentions", "voice"}
+SCOPES = {"city", "intentions", "voice", "wali_brief"}
 MAX_BYTES = 2000000
 
 def now():
@@ -68,6 +68,11 @@ class PrivateFeatures:
               owner_id TEXT PRIMARY KEY, filename TEXT NOT NULL,
               content_type TEXT NOT NULL, size INTEGER NOT NULL,
               seconds REAL NOT NULL, created_at TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS wali_briefs (
+              owner_id TEXT PRIMARY KEY,
+              content TEXT NOT NULL,
+              updated_at TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS family_ai_usage (
               member_id TEXT NOT NULL, created_at TEXT NOT NULL
@@ -197,7 +202,54 @@ class PrivateFeatures:
             if not allowed: return 403, fail("FORBIDDEN")
             p=self.store.conn.execute("SELECT city,intentions FROM profiles WHERE member_id=?",(owner,)).fetchone()
             fields={key:p[key] for key in ("city","intentions") if key in allowed and p and p[key]}
+            if "wali_brief" in allowed:
+                brief = self.store.conn.execute(
+                    "SELECT content FROM wali_briefs WHERE owner_id=?", (owner,)).fetchone()
+                if brief:
+                    fields["waliBrief"] = json.loads(brief["content"])
         return 200, {"ok":True,"shared":fields,"voiceAvailable":"voice" in allowed}
+
+    # A member-authored Wali Brief stays private unless a verified invitee
+    # accepts the explicit wali_brief permission. It is not verification.
+    WALI_FIELDS = ("marriageGoals", "familyExpectations", "livingPlans",
+                   "weddingExpectations", "questions")
+
+    def wali_brief(self, mid):
+        with self.lock:
+            row = self.store.conn.execute(
+                "SELECT content,updated_at FROM wali_briefs WHERE owner_id=?",
+                (mid,)).fetchone()
+        return {"ok": True, "brief": json.loads(row["content"]) if row else {},
+                "updatedAt": row["updated_at"] if row else None, "sharedPublicly": False}
+
+    def save_wali_brief(self, mid, body):
+        if not isinstance(body, dict) or not isinstance(body.get("brief"), dict):
+            return 400, fail("VALIDATION", "Please enter your own conversation notes.")
+        proposed = body["brief"]
+        if set(proposed) - set(self.WALI_FIELDS) or any(
+            not isinstance(value, str) or len(value) > 350 for value in proposed.values()
+        ):
+            return 400, fail("VALIDATION", "Each section must be plain text under 350 characters.")
+        content = {key: proposed.get(key, "").strip() for key in self.WALI_FIELDS}
+        if not any(content.values()) or sum(len(value) for value in content.values()) > 1500:
+            return 400, fail("VALIDATION", "Provide at least one answer (up to 1,500 characters total).")
+        with self.lock:
+            updated = now()
+            self.store.conn.execute("""
+                INSERT INTO wali_briefs(owner_id,content,updated_at) VALUES(?,?,?)
+                ON CONFLICT(owner_id) DO UPDATE SET
+                  content=excluded.content, updated_at=excluded.updated_at
+            """, (mid, json.dumps(content, ensure_ascii=False), updated))
+            self.store.conn.commit()
+        self.store.audit("wali_brief_saved", actor=mid, entity_type="member", entity_id=mid)
+        return 200, {"ok": True, "updatedAt": updated, "sharedPublicly": False}
+
+    def delete_wali_brief(self, mid):
+        with self.lock:
+            self.store.conn.execute("DELETE FROM wali_briefs WHERE owner_id=?", (mid,))
+            self.store.conn.commit()
+        self.store.audit("wali_brief_deleted", actor=mid, entity_type="member", entity_id=mid)
+        return 200, {"ok": True, "deleted": True}
 
     def assistant(self, mid, body):
         topic=str(body.get("topic") or "first")
@@ -308,6 +360,7 @@ class PrivateFeatures:
     def purge_member(self, mid):
         with self.lock:
             self.delete_voice(mid)
+            self.store.conn.execute("DELETE FROM wali_briefs WHERE owner_id=?", (mid,))
             self.store.conn.execute("DELETE FROM family_grants WHERE owner_id=? OR invitee_id=?",(mid,mid))
             self.store.conn.execute("DELETE FROM family_ai_usage WHERE member_id=?",(mid,))
             self.store.conn.execute("DELETE FROM family_blocks WHERE blocker_id=? OR blocked_id=?",(mid,mid))
@@ -339,6 +392,12 @@ class PrivateFeatures:
             return handler._send(429,fail("RATE_LIMITED"),write_body)
         if path=="/api/amanikah/me/family" and method=="GET":
             return handler._send(200,self.family_list(mid),write_body)
+        if path=="/api/amanikah/me/family/brief" and method=="GET":
+            return handler._send(200, self.wali_brief(mid), write_body)
+        if path=="/api/amanikah/me/family/brief" and method=="POST":
+            return handler._send(*self.save_wali_brief(mid, handler._json()), write_body)
+        if path=="/api/amanikah/me/family/brief/delete" and method=="POST":
+            return handler._send(*self.delete_wali_brief(mid), write_body)
         if path=="/api/amanikah/me/family/invite" and method=="POST":
             return handler._send(*self.invite(mid,handler._json() or {}),write_body)
         if path=="/api/amanikah/me/family/respond" and method=="POST":
