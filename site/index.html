@@ -9,7 +9,7 @@
 <meta name="color-scheme" content="light">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://amanikah.com/">
-<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="icon" href="/icon.svg?v=2" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta property="og:locale" content="en_IN">
 <meta property="og:type" content="website">
@@ -36,6 +36,7 @@
 <link rel="stylesheet" href="/css/readability-2026.css?v=1">
 <link rel="stylesheet" href="/css/clarity-2026.css?v=1">
 <link rel="stylesheet" href="/css/short-home-2026.css?v=1">
+<link rel="stylesheet" href="/css/finish-2026.css?v=1">
 <link rel="preload" as="image" href="/images/film/amanikah-poster.webp" type="image/webp" fetchpriority="high">
 <script type="application/ld+json">
 {
@@ -63,7 +64,7 @@
 <header class="header">
   <div class="wrap nav-bar">
     <a href="/" class="brand" aria-label="Amanikah home">
-      <span class="brand-mark" aria-hidden="true">A</span>
+      <img class="brand-emblem" src="/icon.svg?v=2" alt="" width="44" height="44" aria-hidden="true">
       <span class="brand-word">Amanikah</span>
     </a>
     <button class="menu menu-button" type="button" aria-expanded="false" aria-controls="nav" aria-label="Open menu">☰</button>
@@ -98,19 +99,16 @@
       </div>
       <div class="story-hero-wrap">
         <div class="story-hero-media">
-          <video id="storyHeroVideo" poster="/images/film/amanikah-poster.webp" muted playsinline preload="none" aria-label="Silent dramatized scene using fictional AI-generated adults">
+          <video id="storyHeroVideo" poster="/images/film/amanikah-poster.webp" muted playsinline preload="none" aria-describedby="storyFilmDisclosure" aria-label="Amanikah illustrative film preview">
             <source src="/images/film/amanikah-story-30s.mp4" type="video/mp4">
           </video>
-          <span class="film-caption">Amanikah · A 30-second illustrative film</span>
-          
           <div class="story-hero-inner">
-            <span class="cinema-overline">Explore a different kind of beginning</span>
-            <p class="story-hero-title">A journey of care and respect.</p>
-            <p>A short story about marriage, family and what matters to you.</p>
-            <button class="story-start" type="button" data-open-film>▶ Explore the story</button>
-            <small class="story-synthetic">AI-generated fictional actors · an illustrative story, not real members or testimonials</small>
+            <button class="story-start story-start-simple" type="button" data-open-film aria-label="Open the interactive Amanikah story">
+              <span class="story-play-glyph" aria-hidden="true">▶</span><span>Watch our story</span>
+            </button>
           </div>
         </div>
+        <p class="story-outside-disclosure" id="storyFilmDisclosure">Illustrative film with AI actors, not real Amanikah members.</p>
       </div>
     </div>
   </section>
@@ -210,7 +208,7 @@
       <p>Start with a free profile, or join our list for updates. We would be happy to welcome you.</p>
       <div class="cta-row" style="justify-content:center">
         <a class="button button-cream" href="/account/register.html">Join Amanikah for free ↗</a>
-        <a class="button button-outline" href="/signup.html">Get updates ↗</a>
+        <a class="button button-updates" href="/signup.html">Get updates <span aria-hidden="true">↗</span></a>
       </div>
     </div>
   </section>
@@ -220,7 +218,7 @@
   <div class="wrap">
     <div class="foot-grid">
       <div>
-        <div class="foot-title">Amanikah</div>
+        <div class="foot-title foot-brand"><img class="footer-emblem" src="/icon.svg?v=2" alt="" width="36" height="36" aria-hidden="true"><span>Amanikah</span></div>
         <div class="tagline">Nikah with Trust. Nikah with Aman.</div>
         <p class="foot-desc" style="margin-top:17px">A caring place to start your marriage journey. Matching is coming soon.</p>
       </div>
@@ -259,8 +257,7 @@
       <video id="storySceneVideo" muted playsinline preload="metadata" poster="/images/film/amanikah-poster.webp" aria-label="Illustrative animated actors in an Amanikah story">
         <source src="/images/film/amanikah-actor.mp4" type="video/mp4">
       </video>
-      <span class="story-film-label">Amanikah · An unhurried story</span>
-      <div class="story-film-subtitle">Illustrative AI-generated actors · no real members or testimonials.</div>
+
     </div>
     <div class="story-right-pane">
       <button id="storyClose" type="button" class="story-close" aria-label="Close interactive story">×</button>
@@ -278,7 +275,7 @@
         <button class="story-restart" id="storyBack" type="button" hidden>← Back</button>
         <button class="story-restart" id="storyRestart" type="button">Start over</button>
       </div>
-      <p class="story-mini">This interactive experience is a concept demonstration, not a matchmaking prediction. Coarse path choices may be counted anonymously; private matrimonial details are not sent.</p>
+      <p class="story-mini">Illustrative scenes with AI actors—not real members. Your answers here are not a matchmaking score.</p>
     </div>
   </div>
 </div>
