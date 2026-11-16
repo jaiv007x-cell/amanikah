@@ -94,9 +94,12 @@ PY
 # ffprobe required for Voice Rishta WebM duration validation
 docker exec amanikah-api sh -c 'command -v ffprobe >/dev/null'
 docker exec amanikah-api sh -c 'mkdir -p /data/private_voice && chmod 700 /data/private_voice'
-curl -fsS --max-time 15 -o /dev/null https://amanikah.com/images/film/amanikah-story-30s.mp4
+curl -fsS --max-time 15 -o /dev/null https://amanikah.com/images/film/amanikah-story-42s.mp4
 VOICE_STATUS=$(curl -s --max-time 15 -o /dev/null -w '%{http_code}' https://amanikah.com/api/amanikah/me/voice)
 [[ "$VOICE_STATUS" == 401 ]] || { echo PRIVATE_VOICE_ROUTE_EXPOSED; exit 1; }
+WALI_STATUS=$(curl -s --max-time 15 -o /dev/null -w '%{http_code}' https://amanikah.com/api/amanikah/me/family/brief)
+[[ "$WALI_STATUS" == 401 ]] || { echo WALI_BRIEF_ROUTE_EXPOSED_OR_MISSING; exit 1; }
+curl -fsS --max-time 15 -o /dev/null https://amanikah.com/account/family.html
 # Real transactional mail smoke — fails the release if inbox delivery is broken.
 if [[ "$MAIL_SKIP" != "1" ]]; then
   docker exec amanikah-api python -c "import os; from server import Mailer; c=dict(os.environ); m=Mailer(c); r=m.send(c.get('OPERATOR_EMAIL',''),'Amanikah deployment smoke test','Production API deployed. This message tests transactional email.'); assert r.get('ok'), r.get('code','delivery failed')"
