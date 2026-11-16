@@ -1,0 +1,37 @@
+name: Verify Amanikah live release (one-time)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/check-amanikah-live-postrelease-20261116.yml'
+permissions:
+  contents: read
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Validate public health, access control and currently paused registration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          BASE=https://amanikah.com
+          curl --fail --silent --show-error --max-time 20 "$BASE/api/amanikah/health" > health.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('health.json'))
+          assert d.get('ok') is True, d
+          assert d.get('waitlistMode') is True, d
+          assert d.get('matchmakingLive') is False, d
+          assert d.get('mailConfigured') is False, d
+          print("PASS live API healthy, waitlist ON, matchmaking OFF, email unavailable as expected")
+          PY
+          for path in /api/amanikah/me/family/brief /api/amanikah/me/voice; do
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 20 "$BASE$path")
+            test "$status" = 401 || { echo "FAIL private route $path returned $status"; exit 1; }
+            echo "PASS private route $path returns 401 without auth"
+          done
+          curl --fail --silent --show-error --max-time 20 "$BASE/account/family.html" | grep -q 'id="waliForm"'
+          curl --fail --silent --show-error --max-time 20 "$BASE/account/register.html" | grep -q 'id="mailNotice"'
+          curl --fail --silent --show-error --max-time 30 "$BASE/images/film/amanikah-story-42s.mp4" -o /dev/null
+          echo "PASS Family Studio, paused signup messaging, 42s film publicly served"
