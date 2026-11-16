@@ -22,13 +22,13 @@ test('homepage hierarchy, video user control and CTA', async ({ page }) => {
   await page.locator('#storyClose').click({timeout:5000});
   expect(await video.evaluate(v => v.paused)).toBe(true);
 });
-for (const width of [320,375,390,768,1440]) {
+for (const width of [320,375,390,768,1024,1440]) {
   test('homepage has no horizontal overflow at ' + width, async ({page}) => {
     await page.setViewportSize({width, height:850});
     await page.goto(base + '/');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(2);
-    await page.screenshot({path:'test-results/home-' + width + '.png'});
+    await page.screenshot({path:'test-results/home-' + width + '.png', fullPage: false});
   });
 }
 test('free family guide renders three language choices without an account', async ({page}) => {

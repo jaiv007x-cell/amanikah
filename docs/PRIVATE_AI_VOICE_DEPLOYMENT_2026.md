@@ -1,8 +1,10 @@
 # Amanikah — controlled release runbook (16 Nov 2026)
 
 ## Current code status
-- Working **draft PR #1**, not merged or deployed.
-- 30-second illustrative film is committed at `site/images/film/amanikah-story-30s.mp4`; homepage video points to it, stays poster-first and user-controlled.
+- Working **PR #1** on `feature/readable-home-family-guide-2026-11` — not merged; **not live on amanikah.com** until an approved release.
+- Verified VPS layout (16 Nov 2026): static site `/var/www/amanikah` mounted into Caddy as `/srv/amanikah`; API container `amanikah-api` on shared `airrates_edge` network; reverse proxy is **Caddy** (not Nginx); credentials only in `/root/amanikah-api/ops.env` (never overwrite).
+- Live gap vs this branch: no `amanikah-story-30s.mp4`, no Family Studio pages, no `private_features.py`, voice route returns **404**, `mailConfigured=false`, no `ffprobe` in the current alpine image.
+- 30-second illustrative film is committed at `site/images/film/amanikah-story-30s.mp4`; homepage video points to it, stays poster-first and user-controlled at natural 1.0× (optional Calm pace only).
 - Verified-account Family Studio, conditional AI guidance, scoped family invitations and private Voice Rishta API implemented.
 - Voice WebM validation fixed and covered by HTTP tests; voice reporting and blocking included.
 - GitHub workflows: `quality-gate.yml` (Python and full HTTP checks), `ui-smoke.yml` (Chromium tests), `build-film.yml` (asset build).

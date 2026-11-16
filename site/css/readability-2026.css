@@ -27,7 +27,8 @@ body.premium-home .hero .button-outline{color:#fff;border-color:#e9d7ae}
 body.premium-home .feature-pledge .button,body.premium-home .feature-quiz .button{background:#0a4b3c;color:#fff}
 body.premium-home .top-note{font-size:13px;letter-spacing:.025em}
 body.premium-home .story-hero-media{box-shadow:0 20px 58px #001c1699;border-color:#e8cd94}
-body.premium-home .story-hero-media:after{background:linear-gradient(to top,rgba(1,24,20,.97),rgba(1,24,20,.28) 57%,transparent 83%)}
+body.premium-home .story-hero-media:after,body.premium-home .story-hero-media::after{background:linear-gradient(to top,rgba(1,24,20,.97),rgba(1,24,20,.28) 57%,transparent 83%);pointer-events:none!important}
+body.premium-home .story-hero-inner{z-index:3;pointer-events:auto}
 body.premium-home .story-film-pane{background:#072b26}
 body.premium-home .story-right-pane{color:#17362c}
 body.premium-home .story-right-pane p,body.premium-home .story-right-pane .story-option{color:#25483a}

@@ -315,7 +315,8 @@
   });
 
 
-  // Cosmo / recovery: slower cinematic pace, pause preference, no auto-advance.
+  // Natural 1.0× playback by default. Optional calm pace is user-controlled only.
+  // Pause preference is remembered; never autoplay with sound or auto-replay on scroll.
   (function calmCinema() {
     var speed = by("storySpeed");
     var replay = by("storyReplay");
@@ -327,7 +328,9 @@
       vids.forEach(function (v) {
         try {
           v.loop = false;
+          // Always natural rate unless the visitor explicitly chooses Calm pace.
           v.playbackRate = calm ? 0.9 : 1;
+          v.muted = true;
         } catch (e) {}
       });
     }
