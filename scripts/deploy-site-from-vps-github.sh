@@ -16,13 +16,15 @@ trap 'rm -rf "$temp"' EXIT
 git ls-remote "$REMOTE" refs/heads/main >/dev/null || { echo "GitHub VPS deploy key not yet working"; exit 1; }
 git clone -q --depth=1 --branch main "$REMOTE" "$temp/repo"
 test -s "$temp/repo/site/index.html"
-test -s "$temp/repo/site/css/clarity-2026.css"
+test -s "$temp/repo/site/css/finish-2026.css"
+test -s "$temp/repo/site/icon.svg"
 test -s "$temp/repo/site/images/film/amanikah-story-30s.mp4"
-grep -q 'For a meaningful' "$temp/repo/site/index.html"
+grep -q 'A simple, respectful start' "$temp/repo/site/index.html"
+grep -q 'story-outside-disclosure' "$temp/repo/site/index.html"
 sha="$(git -C "$temp/repo" rev-parse HEAD)"
 echo "GitHub main: $sha"
 echo "Static files to update:"
-rsync -ani --exclude='.git' "$temp/repo/site/" "$SITE_DIR/" | head -80
+rsync -ani --exclude='.git' "$temp/repo/site/" "$SITE_DIR/" | sed -n '1,80p'
 if [[ "$mode" != "--apply" ]]; then
   echo "DRY RUN ONLY. Re-run with --apply after confirming this is the intended commit."
   exit 0
@@ -43,7 +45,8 @@ restore(){
 }
 trap restore ERR
 "${prefix[@]}" rsync -a --exclude='.git' "$temp/repo/site/" "$SITE_DIR/"
-"${prefix[@]}" test -s "$SITE_DIR/css/clarity-2026.css"
+"${prefix[@]}" test -s "$SITE_DIR/css/finish-2026.css"
+"${prefix[@]}" test -s "$SITE_DIR/icon.svg"
 "${prefix[@]}" cmp "$temp/repo/site/index.html" "$SITE_DIR/index.html"
 "${prefix[@]}" cmp "$temp/repo/site/images/film/amanikah-story-30s.mp4" "$SITE_DIR/images/film/amanikah-story-30s.mp4"
 trap - ERR
