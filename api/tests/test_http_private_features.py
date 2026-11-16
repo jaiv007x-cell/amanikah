@@ -141,6 +141,17 @@ class Integration(unittest.TestCase):
             self.assertEqual(received[:4],bytes.fromhex("1a45dfa3"))
             self.assertEqual(self.request("GET","/me/voice/received/"+owner,token=st)[0],403)
 
+        code,report=self.request("POST","/me/voice/report",data={
+            "memberId":owner,
+            "reason":"This is a staging-only safety test of inappropriate voice content."
+        },token=ft)
+        self.assertEqual(code,201,report)
+        self.assertTrue(report["reference"].startswith("SF-"))
+        self.assertEqual(self.request("POST","/me/family/block",
+            data={"memberId":owner},token=ft)[0],200)
+        self.assertEqual(self.request("GET","/me/family/shared/"+owner,token=ft)[0],403)
+        self.assertEqual(self.request("GET","/me/voice/received/"+owner,token=ft)[0],403)
+
         self.assertEqual(self.request("POST","/me/family/revoke",
           data={"invitationId":inv["id"]},token=ot)[0],200)
         self.assertEqual(self.request("GET","/me/family/shared/"+owner,token=ft)[0],403)
