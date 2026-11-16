@@ -93,21 +93,24 @@
         p.then(function () {
           btn.textContent = playingLabel;
           btn.setAttribute("aria-pressed", "true");
+          btn.setAttribute("aria-label", playingLabel.replace(/^❚❚\s*/, "Pause "));
         }).catch(function () {
           btn.textContent = pausedLabel;
           btn.setAttribute("aria-pressed", "false");
+          btn.setAttribute("aria-label", pausedLabel.replace(/^▶\s*/, "Play "));
         });
       }
     } else {
       v.pause();
       btn.textContent = pausedLabel;
       btn.setAttribute("aria-pressed", "false");
+      btn.setAttribute("aria-label", pausedLabel.replace(/^▶\s*/, "Play "));
     }
   }
 
   if (heroPause) {
     heroPause.addEventListener("click", function () {
-      handleVideo(hero, heroPause, "▶", "❚❚");
+      handleVideo(hero, heroPause, "▶ Watch the 30-second film", "❚❚ Pause the 30-second film");
     });
   }
   if (scenePause) {
