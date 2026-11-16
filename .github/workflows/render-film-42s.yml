@@ -1,0 +1,47 @@
+name: Render Amanikah 42-second film
+on:
+  push:
+    branches: ['feature/film-autoplay-42s-20261116']
+    paths:
+      - 'scripts/build-amanikah-film-42s.sh'
+      - '.github/workflows/render-film-42s.yml'
+permissions:
+  contents: write
+concurrency:
+  group: amanikah-film-42s
+  cancel-in-progress: false
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install video tools
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+      - name: Render 42-second film at 1x motion
+        run: bash scripts/build-amanikah-film-42s.sh
+      - name: Verify 42-second duration, silent audio and 24fps
+        run: |
+          python3 - <<'PY'
+          import json,subprocess
+          p='site/images/film/amanikah-story-42s.mp4'
+          x=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_format','-show_streams','-of','json',p]))
+          d=float(x['format']['duration'])
+          assert 41.8 <= d <= 42.2, d
+          streams=x['streams']
+          assert len(streams)==1 and streams[0]['codec_type']=='video',streams
+          assert streams[0]['r_frame_rate']=='24/1'
+          assert int(x['format']['size']) < 8000000
+          print('Verified',d,'seconds, 24fps, no audio, size',x['format']['size'])
+          PY
+      - name: Commit validated film to feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/images/film/amanikah-story-42s.mp4
+          if ! git diff --cached --quiet; then
+            git commit -m "assets: include verified 42-second silent film"
+            git push origin HEAD:feature/film-autoplay-42s-20261116
+          fi

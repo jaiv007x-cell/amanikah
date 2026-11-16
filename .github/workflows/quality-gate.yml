@@ -34,6 +34,17 @@ jobs:
           grep -q 'button-updates' site/index.html
           test -s site/css/finish-2026.css
           test -s site/icon.svg
+      - name: Validate rendered 42-second silent film
+        run: |
+          test -s site/images/film/amanikah-story-42s.mp4
+          python3 - <<'PY'
+          import json,subprocess
+          p='site/images/film/amanikah-story-42s.mp4'
+          d=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_format','-show_streams','-of','json',p]))
+          assert 41.8<=float(d['format']['duration'])<=42.2
+          assert [s['codec_type'] for s in d['streams']]==['video']
+          assert d['streams'][0]['r_frame_rate']=='24/1'
+          PY
       - name: Verify no exposed AI credentials in tracked env template
         run: |
           python3 - <<'PY'

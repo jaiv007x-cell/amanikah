@@ -108,45 +108,82 @@
     }
   }
 
+  // Silent, 42-second film plays by default at natural speed when visible.
+  // User pause, reduced-motion and data-saving preferences always take priority.
+  var userPausedHero = false;
+  var heroVisible = true;
+  var autoAllowed = !reduced && !saveData;
+  try { userPausedHero = localStorage.getItem("amanikah.film.pausePref") === "1"; } catch (ePref) {}
+  hero.muted = true;
+  hero.defaultPlaybackRate = 1;
+  hero.playbackRate = 1;
+  hero.loop = true;
+  // Defer the autoplay decision until reduced-motion and Data Saver are checked.
+  hero.autoplay = autoAllowed && !userPausedHero;
+  if (!autoAllowed || userPausedHero) {
+    hero.autoplay = false;
+    hero.removeAttribute("autoplay");
+  }
+
+  function syncHeroButton() {
+    if (!heroPause) return;
+    var playing = !hero.paused;
+    heroPause.textContent = playing ? "❚❚ Pause film" : "▶ Play film";
+    heroPause.setAttribute("aria-label", playing ? "Pause film" : "Play film");
+    heroPause.setAttribute("aria-pressed", playing ? "true" : "false");
+  }
+
+  function playHero(automatically) {
+    if (automatically && (!autoAllowed || userPausedHero || !heroVisible || document.hidden || !modal.hidden)) return;
+    hero.muted = true;
+    hero.playbackRate = 1;
+    if (hero.ended) hero.currentTime = 0;
+    try {
+      var promise = hero.play();
+      if (promise && promise.then) {
+        promise.then(syncHeroButton).catch(syncHeroButton);
+      }
+    } catch (e) { syncHeroButton(); }
+  }
+
   if (heroPause) {
     heroPause.addEventListener("click", function () {
-      handleVideo(hero, heroPause, "▶ Watch the 30-second film", "❚❚ Pause the 30-second film");
+      if (hero.paused) {
+        userPausedHero = false;
+        try { localStorage.removeItem("amanikah.film.pausePref"); } catch (err) {}
+        playHero(false);
+      } else {
+        userPausedHero = true;
+        try { localStorage.setItem("amanikah.film.pausePref", "1"); } catch (err2) {}
+        hero.pause();
+      }
+      syncHeroButton();
     });
   }
-  if (scenePause) {
-    scenePause.addEventListener("click", function () {
-      handleVideo(scene, scenePause, "▶ Play video", "❚❚ Pause video");
-    });
+  hero.addEventListener("playing", syncHeroButton);
+  hero.addEventListener("pause", syncHeroButton);
+  hero.addEventListener("loadedmetadata", function () {
+    hero.playbackRate = 1;
+    syncHeroButton();
+    playHero(true);
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) hero.pause();
+    else playHero(true);
+  });
+  if ("IntersectionObserver" in window) {
+    var heroObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        heroVisible = entry.isIntersecting && entry.intersectionRatio > 0.05;
+        if (heroVisible) playHero(true);
+        else hero.pause();
+      });
+    }, { threshold: [0, 0.05, 0.25] });
+    heroObserver.observe(hero);
+  } else {
+    playHero(true);
   }
-
-  // Poster-first: attach hero MP4 only when near viewport (protects LCP).
-  (function lazyHeroSource() {
-    var srcEl = hero.querySelector("source");
-    if (!srcEl) return;
-    var intended = srcEl.getAttribute("src") || movieActor;
-    srcEl.removeAttribute("src");
-    hero.removeAttribute("src");
-    hero.load();
-    var armed = false;
-    function arm() {
-      if (armed) return;
-      armed = true;
-      srcEl.setAttribute("src", intended);
-      hero.load();
-    }
-    if ("IntersectionObserver" in window) {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) { arm(); io.disconnect(); }
-        });
-      }, { rootMargin: "120px" });
-      io.observe(hero);
-    } else {
-      window.addEventListener("load", arm);
-    }
-  })();
-
-  // Deliberately no automatic hero playback: visitor controls the film.
+  syncHeroButton();
 
   function setMovie(src) {
     var current = scene.querySelector("source");
@@ -269,7 +306,8 @@
     scene.pause();
     document.body.style.overflow = "";
     if (originalFocus && originalFocus.focus) originalFocus.focus();
-    // Closing the dialogue never restarts the hero automatically.
+    // Resume silent autoplay only if the visitor hasn't paused it.
+    playHero(true);
   }
 
   document.querySelectorAll("[data-open-film]").forEach(function (n) {
@@ -315,70 +353,30 @@
   });
 
 
-  // Natural 1.0× playback by default. Optional calm pace is user-controlled only.
-  // Pause preference is remembered; never autoplay with sound or auto-replay on scroll.
-  (function calmCinema() {
-    var speed = by("storySpeed");
-    var replay = by("storyReplay");
-    var vids = [hero, scene].filter(Boolean);
-    var calm = false;
-    var pausePref = false;
-    try { pausePref = localStorage.getItem("amanikah.film.pausePref") === "1"; } catch (ePref) {}
-    function setPace() {
-      vids.forEach(function (v) {
-        try {
-          v.loop = false;
-          // Always natural rate unless the visitor explicitly chooses Calm pace.
-          v.playbackRate = calm ? 0.9 : 1;
-          v.muted = true;
-        } catch (e) {}
-      });
+  // Interactive story clips remain manual, with a replay button.
+  scene.loop = false;
+  scene.muted = true;
+  scene.playbackRate = 1;
+  scene.addEventListener("ended", function () {
+    if (scenePause) {
+      scenePause.textContent = "↺ Replay scene";
+      scenePause.setAttribute("aria-label", "Replay scene");
+      scenePause.setAttribute("aria-pressed", "false");
     }
-    setPace();
-    vids.forEach(function (v) {
-      v.addEventListener("loadedmetadata", setPace);
-      v.addEventListener("ended", function () {
-        var b = v === hero ? heroPause : scenePause;
-        if (b) {
-          b.textContent = v === hero ? "↺" : "↺ Replay scene";
-          b.setAttribute("aria-pressed", "false");
-        }
-      });
-    });
-    if (pausePref) {
-      hero.pause();
-      if (heroPause) {
-        heroPause.textContent = "▶";
-        heroPause.setAttribute("aria-pressed", "false");
+  });
+  var replay = by("storyReplay");
+  if (replay) {
+    replay.addEventListener("click", function () {
+      scene.currentTime = 0;
+      var p = scene.play();
+      if (p && p.catch) p.catch(function () {});
+      if (scenePause) {
+        scenePause.textContent = "❚❚ Pause scene";
+        scenePause.setAttribute("aria-label", "Pause scene");
+        scenePause.setAttribute("aria-pressed", "true");
       }
-    }
-    function rememberPause(isPaused) {
-      try { localStorage.setItem("amanikah.film.pausePref", isPaused ? "1" : "0"); } catch (eSet) {}
-    }
-    if (heroPause) {
-      heroPause.addEventListener("click", function () {
-        rememberPause(hero.paused);
-      });
-    }
-    if (speed) {
-      speed.addEventListener("click", function () {
-        calm = !calm;
-        setPace();
-        speed.textContent = calm ? "Calm pace" : "Normal pace";
-        speed.setAttribute("aria-pressed", String(calm));
-      });
-    }
-    if (replay) {
-      replay.addEventListener("click", function () {
-        scene.currentTime = 0;
-        scene.play().catch(function () {});
-        if (scenePause) {
-          scenePause.textContent = "❚❚ Pause scene";
-          scenePause.setAttribute("aria-pressed", "true");
-        }
-      });
-    }
-  })();
+    });
+  }
 
   window.AmanikahFilm = { open: open, close: close };
 })();

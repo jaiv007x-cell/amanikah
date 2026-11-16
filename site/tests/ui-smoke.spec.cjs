@@ -7,13 +7,11 @@ test('homepage hierarchy, video user control and CTA', async ({ page }) => {
   await expect(page.locator('a[href="/account/register.html"]').first()).toBeVisible();
   const video = page.locator('#storyHeroVideo');
   await expect(video).toBeVisible();
-  expect(await video.evaluate(v => v.paused)).toBe(true);
-  console.log('FILM STEP hero play');
+  await expect.poll(() => video.evaluate(v => !v.paused), { timeout: 12000 }).toBe(true);
+  console.log('FILM STEP autoplay running');
   await page.locator('#storyHeroPause').click({timeout:5000});
-  await expect.poll(() => video.evaluate(v => !v.paused), { timeout: 6000 }).toBe(true);
-  console.log('FILM STEP hero pause');
-  await page.locator('#storyHeroPause').click({timeout:5000});
-  expect(await video.evaluate(v => v.paused)).toBe(true);
+  await expect.poll(() => video.evaluate(v => v.paused)).toBe(true);
+  console.log('FILM STEP manual pause remains respected');
   console.log('FILM STEP modal open');
   await page.locator('[data-open-film]').last().click({timeout:5000});
   await expect(page.locator('#storyClose')).toBeVisible();
@@ -84,14 +82,47 @@ test('pricing page exposes real free choice and clearly marks example paid price
   await expect(page.locator('main')).toContainText('indicative test prices');
   await expect(page.locator('main')).toContainText('Paid services are not being sold yet');
 });
-test('hero film remains an optional path and never autoplays or forces speed',async({page})=>{
+test('42-second film autoplays silently at natural speed and remains controllable',async({page})=>{
   await page.goto(base + '/');
   const v=page.locator('#storyHeroVideo');
-  expect(await v.evaluate(n=>n.autoplay)).toBe(false);
-  expect(await v.evaluate(n=>n.muted)).toBe(true);
-  await expect(page.locator('#storySpeed')).toHaveCount(0);
-  await expect(page.locator('#storyHeroPause')).toBeVisible();
+  await expect.poll(() => v.evaluate(n=>n.readyState >= 1), {timeout:12000}).toBe(true);
+  const settings=await v.evaluate(n=>({
+    autoplay:n.autoplay,muted:n.muted,loop:n.loop,rate:n.playbackRate,duration:n.duration,
+    src:n.currentSrc
+  }));
+  expect(settings.autoplay).toBe(true);
+  expect(settings.muted).toBe(true);
+  expect(settings.loop).toBe(true);
+  expect(settings.rate).toBe(1);
+  expect(settings.duration).toBeGreaterThan(41);
+  expect(settings.duration).toBeLessThan(43);
+  expect(settings.src).toContain('amanikah-story-42s.mp4');
+  await expect.poll(()=>v.evaluate(n=>!n.paused),{timeout:12000}).toBe(true);
+  await expect(page.locator('#storyHeroPause')).toContainText('Pause film');
+  await page.locator('#storyHeroPause').click();
+  await expect.poll(()=>v.evaluate(n=>n.paused)).toBe(true);
+  await page.reload();
+  await expect.poll(()=>v.evaluate(n=>n.paused)).toBe(true);
+  await expect(page.locator('#storyHeroPause')).toContainText('Play film');
   await expect(page.locator('a[href="/nikah-readiness/"]').first()).toBeVisible();
+});
+test('reduced-motion visitors see poster until they choose to play',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.goto(base+'/');
+  const v=page.locator('#storyHeroVideo');
+  expect(await v.evaluate(n=>n.autoplay)).toBe(false);
+  expect(await v.evaluate(n=>n.paused)).toBe(true);
+  await page.locator('#storyHeroPause').click();
+  await expect.poll(()=>v.evaluate(n=>!n.paused),{timeout:12000}).toBe(true);
+});
+test('autoplay pauses out of view and resumes only when appropriate',async({page})=>{
+  await page.goto(base+'/');
+  const v=page.locator('#storyHeroVideo');
+  await expect.poll(()=>v.evaluate(n=>!n.paused),{timeout:12000}).toBe(true);
+  await page.locator('#questions').scrollIntoViewIfNeeded();
+  await expect.poll(()=>v.evaluate(n=>n.paused),{timeout:7000}).toBe(true);
+  await v.scrollIntoViewIfNeeded();
+  await expect.poll(()=>v.evaluate(n=>!n.paused),{timeout:12000}).toBe(true);
 });
 
 test('homepage uses short, welcoming language without false live claims', async ({page}) => {
