@@ -414,16 +414,16 @@ footer .logo { font-size: 1.8rem; }
 /* Amanikah shared brand mark and readable public-page details, November 2026. */
 .site-header .logo{
   display:inline-flex;align-items:center;gap:9px;
-  color:#0a4133!important;text-decoration:none;white-space:nowrap;
+  color:#fffaf0!important;text-decoration:none;white-space:nowrap;
 }
 .site-header .logo .site-brand-emblem{
   display:block;width:37px;height:37px;flex:0 0 37px;object-fit:contain;
 }
 .site-header .logo .site-brand-name{
-  color:#0a4133!important;font-family:Georgia,serif;
+  color:#fffaf0!important;font-family:Georgia,serif;
   font-size:clamp(1.36rem,2.6vw,1.75rem);font-weight:700;letter-spacing:-.03em;
 }
-.site-header .logo:hover .site-brand-name{color:#11654a!important}
+.site-header .logo:hover .site-brand-name{color:#f5d48e!important}
 body:not(.premium-home) :is(.quiet,.muted,.small,.footnote){color:#405a4d}
 body:not(.premium-home) .kicker{color:#805521;font-weight:800}
 body:not(.premium-home) :is(.btn-emerald,.button-primary){color:#fff!important;background:#0a4b3b}
