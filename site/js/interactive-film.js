@@ -118,6 +118,8 @@
   hero.defaultPlaybackRate = 1;
   hero.playbackRate = 1;
   hero.loop = true;
+  // Defer the autoplay decision until reduced-motion and Data Saver are checked.
+  hero.autoplay = autoAllowed && !userPausedHero;
   if (!autoAllowed || userPausedHero) {
     hero.autoplay = false;
     hero.removeAttribute("autoplay");
