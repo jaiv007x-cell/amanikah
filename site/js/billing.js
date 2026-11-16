@@ -73,7 +73,10 @@
 
   function notice(catalog) {
     var payment = catalog.payment || {};
-    return '<p class="notice">' + esc(payment.message || catalog.scheduleNote) + " Sandbox figures are not a live charge.</p>";
+    var isLive = payment.mode === "live" && payment.live === true && payment.configured === true;
+    var label = isLive ? "" : "Paid services are not being sold yet. ";
+    var disclaimer = isLive ? "" : " Example figures are for testing only and are not live charges.";
+    return '<p class="notice">' + esc(label + (payment.message || catalog.scheduleNote || "") + disclaimer) + "</p>";
   }
 
   function list(items) {
