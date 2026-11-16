@@ -104,3 +104,50 @@ test('homepage uses short, welcoming language without false live claims', async 
   await expect(page.locator('.home-free a[href="/nikah-readiness/"]')).toBeVisible();
   await expect(page.locator('link[href*="short-home-2026.css"]')).toHaveCount(1);
 });
+
+
+test('film photo is not covered by captions, headlines or disclosure', async ({page}) => {
+  await page.goto(base + '/');
+  const frame = page.locator('.story-hero-media');
+  await expect(frame.locator('.story-hero-inner .story-start-simple')).toBeVisible();
+  await expect(frame.locator('.film-caption,.story-synthetic,.story-hero-title,.cinema-overline')).toHaveCount(0);
+  await expect(frame.locator('.story-hero-inner')).toHaveText('Watch our story');
+  await expect(page.locator('#storyFilmDisclosure')).toBeVisible();
+  await expect(page.locator('#storyFilmDisclosure')).toContainText('AI actors');
+  const overlap = await page.evaluate(() => {
+    const frame = document.querySelector('.story-hero-media').getBoundingClientRect();
+    const disclosure = document.querySelector('#storyFilmDisclosure').getBoundingClientRect();
+    return disclosure.top >= frame.bottom - 1;
+  });
+  expect(overlap).toBe(true);
+  await page.locator('[data-open-film]').last().click();
+  await expect(page.locator('.story-film-pane .story-film-label,.story-film-pane .story-film-subtitle')).toHaveCount(0);
+  await expect(page.locator('.story-mini')).toContainText('AI actors');
+});
+test('Get updates button has readable text/background contrast', async ({page}) => {
+  await page.goto(base + '/');
+  const btn = page.locator('.end-cta .button-updates');
+  await expect(btn).toBeVisible();
+  const contrast = await btn.evaluate(el => {
+    const style = getComputedStyle(el);
+    const channels = color => (color.match(/[\d.]+/g) || []).slice(0,3).map(Number);
+    const brightness = color => channels(color).map(x => {
+      const v=x/255;
+      return v<=0.04045 ? v/12.92 : ((v+0.055)/1.055)**2.4;
+    }).reduce((sum,x,i)=>sum+x*[0.2126,0.7152,0.0722][i],0);
+    const f=brightness(style.color),b=brightness(style.backgroundColor);
+    return (Math.max(f,b)+0.05)/(Math.min(f,b)+0.05);
+  });
+  expect(contrast).toBeGreaterThanOrEqual(4.5);
+  await btn.click();
+  await expect(page).toHaveURL(/\/signup\.html$/);
+});
+test('new scalable Amanikah emblem is visible throughout key pages', async ({page}) => {
+  for (const url of ['/','/signup.html','/account/register.html','/account/login.html','/simple-nikah/','/nikah-readiness/','/family-guide/','/account/family.html']) {
+    await page.goto(base+url);
+    const mark = page.locator('header img[src*="/icon.svg"],header .brand-emblem');
+    await expect(mark.first()).toBeVisible();
+    const valid = await mark.first().evaluate(img=>img.complete && img.naturalWidth > 0 && img.naturalHeight > 0);
+    expect(valid).toBe(true);
+  }
+});
