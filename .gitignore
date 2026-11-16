@@ -13,3 +13,9 @@ node_modules/
 venv/
 qa-artifacts/
 *.log
+node_modules/
+package-lock.json
+package.json
+test-results/
+site/tests/test-results/
+*.log
