@@ -43,7 +43,7 @@
   <div class="wrap page-head">
     <p class="kicker">Privacy</p>
     <h1>What Amanikah stores, and what you control</h1>
-    <p>Last updated 15 November 2026. This page describes the site as it works today — including waitlist mode and sandbox billing.</p>
+    <p>Last updated 16 November 2026. This page describes the site as it works today — including waitlist mode and sandbox billing.</p>
   </div>
   <section class="band" style="padding-top:0">
     <div class="wrap narrow prose">
@@ -60,7 +60,8 @@
       <p>Nikah Priorities answers and most pledge drafts stay in this browser unless you consent to carry a sanitized referral into waitlist signup. Unlisted #SimpleNikah links are stored as preference-only payloads on the server. Revoking a link on the server makes the public page unavailable (HTTP 410). Downloads or copies already saved elsewhere cannot be recalled.</p>
 
       <h2>Voice introductions</h2>
-      <p>Homepage and demo voice notes are made in the browser. They are not uploaded from the marketing homepage. In the membership demo, shares expire; drafts are removed after 24 hours; a published introduction is removed after 180 days or when you delete it. The microphone is used only after you allow it. Amanikah does not clone a voice and does not score emotion, honesty, or sincerity.</p>
+      <p>Marketing-page and demo voice notes remain browser-only. When the authenticated <a href="/account/family.html">Family Studio</a> is enabled, a verified adult can separately choose to upload one private voice recording to server-managed media storage outside the public website directory. Recordings are accessible only to their owner and verified relatives who accept an invitation expressly granting voice access. Recordings can be replaced or deleted; account deletion and consent withdrawal also trigger private-media removal. Family member blocking and permission revocation immediately prevent future access. Access is not the same as a guarantee that recipients cannot record what they hear.</p>
+      <p>Voice upload stores the audio, its type, duration and upload time. We do not perform voice cloning or infer honesty, sincerity, religious observance or emotion. Voice Rishta is not a public member-discovery feature while matchmaking remains disabled. A precise backup-retention period for removed files remains an operational decision that must be published before broad launch.</p>
 
       <h2>Billing</h2>
       <p>Sandbox orders store a browser reference, the service name, the fee, and payment state. Card numbers are rejected and are not stored. Live card capture stays off until services are deliverable. A sandbox invoice is not a tax invoice and is not real revenue.</p>
@@ -69,6 +70,8 @@
       <ul>
         <li><strong>Waitlist / tickets:</strong> name, email, city, preferences or message text, source/referral, timestamps — purpose: operator review and support/safety.</li>
         <li><strong>Production accounts:</strong> email, password hash, profile fields you enter, consent flags — purpose: authenticated membership.</li>
+        <li><strong>Private Family Studio:</strong> invited registered-member identifiers, permission scopes, acceptance/revocation/block records and private voice media only when used — purpose: consent-controlled participation.</li>
+        <li><strong>AI Family Assistant:</strong> per-request topic, language and optional note only when you actively enable AI for that request; usage timestamps for rate limits.</li>
         <li><strong>Demo membership:</strong> fictional local records only on your device.</li>
         <li><strong>Share links:</strong> preference-only payloads for unlisted #SimpleNikah links.</li>
         <li><strong>Sandbox billing:</strong> order metadata without card numbers.</li>
@@ -76,8 +79,9 @@
       </ul>
       <p><strong>Operator decision still open:</strong> exact retention windows for waitlist notes, ticket bodies, and deletion audit rows should be confirmed before claiming a specific number of days.</p>
 
-      <h2>Family tools</h2>
-      <p>Optional family invitations and Family Assistant (when an administrator enables them in the demo) show only fields the adult permits. Withdrawing consent or revoking permissions immediately blocks relative access in that demo workspace.</p>
+      <h2>Family tools and optional AI</h2>
+      <p>The production Family Studio, when deployed, stores invitations, the limited fields you select for sharing, each recipients acceptance or decline, revocation and blocking state. Neither a family invitation nor payment gives anyone your private profile without your permission. Members may report abusive voice content for authorized human review.</p>
+      <p>Guided conversation questions work without an AI vendor. If an administrator enables AI and you individually opt in to a request, the selected discussion topic, language and optional note you type are sent to the configured OpenAI Responses API. Profile fields, identity documents, audio and other relatives data are not added automatically. Do not include another persons private details in an optional note. AI answers are advisory text, not religious rulings, suitability predictions or verified claims. Provider processing is governed by the providers applicable terms and privacy practices. If the API key is absent, the service gives a clear unavailable response instead of silently sending data elsewhere.</p>
 
       <h2>Analytics</h2>
       <p>Quiz and #SimpleNikah events may be stored locally. A network beacon is sent only if an analytics endpoint is configured and you have allowed analytics. Private matrimonial profile content is not sent to marketing analytics.</p>
