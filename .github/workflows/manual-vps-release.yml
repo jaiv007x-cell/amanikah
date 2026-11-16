@@ -6,6 +6,11 @@ on:
         description: 'Type DEPLOY to release the reviewed main branch'
         required: true
         type: string
+      allow_mail_skip:
+        description: 'Temporarily deploy in early-access mode without transactional email. Signup verification remains unavailable.'
+        required: true
+        default: false
+        type: boolean
 permissions:
   contents: read
 concurrency:
@@ -45,6 +50,7 @@ jobs:
       AMANIKAH_VPS_USER: ${{ secrets.AMANIKAH_VPS_USER }}
       AMANIKAH_VPS_KEY: ${{ secrets.AMANIKAH_VPS_KEY }}
       AMANIKAH_SSH_KNOWN_HOSTS: ${{ secrets.AMANIKAH_SSH_KNOWN_HOSTS }}
+      AMANIKAH_ALLOW_MAIL_SKIP: ${{ inputs.allow_mail_skip && '1' || '0' }}
     steps:
       - uses: actions/checkout@v4
       - name: Check required server credentials
@@ -68,5 +74,5 @@ jobs:
           REMOTE="$AMANIKAH_VPS_USER@$AMANIKAH_VPS_HOST"
           STAGE=$("${SSH[@]}" "$REMOTE" 'umask 077; mktemp -d /tmp/amanikah-release.XXXXXXXX')
           rsync -az -e "ssh -o StrictHostKeyChecking=yes -i ~/.ssh/id_deploy" site api scripts "$REMOTE:$STAGE/"
-          "${SSH[@]}" "$REMOTE" "if [ \$(id -u) -eq 0 ]; then RELEASE_ROOT='$STAGE' bash '$STAGE/scripts/deploy-amanikah-production.sh'; else sudo -n env RELEASE_ROOT='$STAGE' bash '$STAGE/scripts/deploy-amanikah-production.sh'; fi"
+          "${SSH[@]}" "$REMOTE" "if [ \$(id -u) -eq 0 ]; then AMANIKAH_ALLOW_MAIL_SKIP='$AMANIKAH_ALLOW_MAIL_SKIP' RELEASE_ROOT='$STAGE' bash '$STAGE/scripts/deploy-amanikah-production.sh'; else sudo -n env AMANIKAH_ALLOW_MAIL_SKIP='$AMANIKAH_ALLOW_MAIL_SKIP' RELEASE_ROOT='$STAGE' bash '$STAGE/scripts/deploy-amanikah-production.sh'; fi"
           "${SSH[@]}" "$REMOTE" "rm -rf '$STAGE'"
