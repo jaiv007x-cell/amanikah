@@ -33,6 +33,7 @@
 <link rel="stylesheet" href="/css/premium-home.css?v=7">
 <link rel="stylesheet" href="/css/interactive-film.css?v=6">
 <link rel="stylesheet" href="/css/cosmopolitan-v4.css?v=3">
+<link rel="stylesheet" href="/css/readability-2026.css?v=1">
 <link rel="preload" as="image" href="/images/film/amanikah-poster.webp" type="image/webp">
 <script type="application/ld+json">
 {
@@ -86,6 +87,7 @@
           <a class="button button-cream ds-btn ds-btn-gold" href="/account/register.html">Create your private profile <span aria-hidden="true">↗</span></a>
           <a class="button button-outline ds-btn ds-btn-ghost" href="/nikah-readiness/">Discover your Nikah priorities <span aria-hidden="true">↗</span></a>
         </div>
+        <button class="story-media-control hero-film-control" id="storyHeroPause" type="button" aria-label="Play the 30-second illustrative film" aria-pressed="false">▶ Watch the 30-second film</button>
         <div class="hero-detail">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
           Private by design · Free to begin · Adults 21+
@@ -95,16 +97,16 @@
       <div class="story-hero-wrap">
         <div class="story-hero-media">
           <video id="storyHeroVideo" poster="/images/film/amanikah-poster.webp" muted playsinline preload="none" aria-label="Illustrative animated actor introducing the Amanikah experience">
-            <source src="/images/film/amanikah-actor.mp4" type="video/mp4">
+            <source src="/images/film/amanikah-story-30s.mp4" type="video/mp4">
           </video>
-          <span class="film-caption">Amanikah · A cinematic introduction</span>
-          <button class="story-media-control" id="storyHeroPause" type="button" aria-label="Play or pause the illustrative video" aria-pressed="false">❚❚</button>
+          <span class="film-caption">Amanikah · A 30-second illustrative film</span>
+          
           <div class="story-hero-inner">
             <span class="cinema-overline">Explore a different kind of beginning</span>
             <p class="story-hero-title">Your story, at your pace.</p>
             <p>A thoughtful film about what matters. There’s no rush — you decide when to continue.</p>
             <button class="story-start" type="button" data-open-film>▶ Explore the story</button>
-            <small class="story-synthetic">AI-generated fictional actors · not members, testimonials or matches · original filmed footage planned</small>
+            <small class="story-synthetic">AI-generated fictional actors · an illustrative story, not real members or testimonials</small>
           </div>
         </div>
       </div>
@@ -209,6 +211,20 @@
     </div>
   </section>
 
+<section class="an-launch-tools" aria-labelledby="an-launch-title">
+ <div class="wrap">
+  <div class="section-head">
+   <div><span class="eyebrow">Explore Amanikah today</span><h2 id="an-launch-title">Thoughtful tools for a meaningful beginning.</h2></div>
+   <p>Three useful experiences you can try without waiting for matchmaking to launch. Free, private, and designed around your choices.</p>
+  </div>
+  <div class="an-launch-grid">
+   <article class="an-launch-card"><span class="eyebrow">A shared commitment</span><h3>#SimpleNikah</h3><p>Make a voluntary pledge for a dignified celebration without dowry demands. Download a beautiful card or share only what you choose.</p><a class="button button-primary" href="/simple-nikah/">Explore the pledge ↗</a></article>
+   <article class="an-launch-card"><span class="eyebrow">Your priorities</span><h3>Nikah readiness</h3><p>Reflect on family, wedding expectations, relocation and your future together. Receive a private summary—not a pass/fail score.</p><a class="button button-primary" href="/nikah-readiness/">Take the free quiz ↗</a></article>
+   <article class="an-launch-card"><span class="eyebrow">Family support</span><h3>Aman family guide</h3><p>Generate respectful meeting questions, a preparation checklist and a thoughtful response. No AI model or private-profile access is implied.</p><a class="button button-primary" href="/family-guide/">Use the free guide ↗</a></article>
+   <article class="an-launch-card"><span class="eyebrow">Verified members · private</span><h3>AI Wali &amp; Voice Rishta</h3><p>Prepare a careful family conversation or record your personal voice introduction. AI responses require explicit consent and a configured service; recordings stay private.</p><a class="button button-primary" href="/account/family.html">Explore Family Studio ↗</a></article>
+  </div>
+ </div>
+</section>
   <section class="section alignment" id="alignment">
     <div class="wrap alignment-grid">
       <div class="alignment-visual">
@@ -257,7 +273,7 @@
         <span class="eyebrow">Family, where it belongs</span>
         <h2>Your life. Your choice. Their support.</h2>
         <p>Marriage can bring two families together without removing either adult’s voice. Amanikah is being designed to give family members a thoughtful role, with permission and clear boundaries.</p>
-        <p>Later, optional family briefs can organize mutually approved facts and open questions — without guessing or deciding suitability for anyone.</p>
+        <p>Try our free family discussion guide today. The private member Family Assistant remains a clearly labeled demonstration until a secure live AI service is configured.</p><p><a href="/family-guide/" class="button button-outline">Open family guide ↗</a></p>
         <a href="/account/register.html" class="button button-primary">Create private profile <span aria-hidden="true">↗</span></a>
       </div>
       <div class="family-art">
@@ -438,9 +454,9 @@
     <div class="story-right-pane">
       <button id="storyClose" type="button" class="story-close" aria-label="Close interactive story">×</button>
       <div class="cinema-controls" aria-label="Story video controls">
-        <button id="storyScenePause" type="button" class="story-pause" aria-pressed="false">❚❚ Pause scene</button>
+        <button id="storyScenePause" type="button" class="story-pause" aria-pressed="false">▶ Play scene</button>
         <button id="storyReplay" type="button" class="story-speed" aria-label="Replay current scene">↺ Replay</button>
-        <button id="storySpeed" type="button" class="story-speed" aria-label="Toggle video playback speed" aria-pressed="true">Calm pace</button>
+        <button id="storySpeed" type="button" class="story-speed" aria-label="Toggle video playback speed" aria-pressed="false">Normal pace</button>
       </div>
       <span id="storyStep" class="story-step-info">Part 1 of 3</span>
       <h2 id="storyTitle">Where does your story begin?</h2>
@@ -459,6 +475,6 @@
 document.getElementById("year").textContent = String(new Date().getFullYear());
 </script>
 <script src="/js/site.js?v=2" defer></script>
-<script src="/js/interactive-film.js?v=4" defer></script>
+<script src="/js/interactive-film.js?v=5" defer></script>
 </body>
 </html>

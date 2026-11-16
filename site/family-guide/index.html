@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#073b32">
+<meta name="description" content="Free Amanikah family discussion guide: thoughtful questions about marriage, expectations and family involvement.">
+<title>Aman Family Guide | Amanikah</title>
+<link rel="canonical" href="https://amanikah.com/family-guide/">
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#18352d;background:#fbf8f1;font-size:16px}
+*{box-sizing:border-box}body{margin:0;line-height:1.6}a{color:inherit}
+header{background:#073b32;color:#fff;padding:20px max(24px,calc((100vw - 1020px)/2))}header a{font-weight:800;text-decoration:none;font-size:23px}
+main{max-width:1020px;margin:auto;padding:50px 24px 90px}
+.eyebrow{color:#76551d;font-size:12px;text-transform:uppercase;letter-spacing:.15em;font-weight:800}
+h1,h2{font-family:Georgia,serif;letter-spacing:-.02em;line-height:1.12}h1{font-size:clamp(2.6rem,6vw,4.5rem);margin:12px 0}h2{font-size:2rem;margin:14px 0}
+.lead{font-size:1.14rem;max-width:750px;color:#375447}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:35px}
+.panel{background:#fffdf8;border:1px solid #ded5c3;border-radius:20px;padding:28px;box-shadow:0 12px 32px #062a2210}
+label{display:block;font-weight:750;margin:12px 0 6px}
+select,input{width:100%;padding:12px;border:1px solid #a3b3a8;border-radius:10px;background:#fff;color:#163a2d;font:inherit}
+button,.button{border:0;border-radius:999px;background:#0a4b3c;color:#fff;padding:13px 24px;font-size:16px;font-weight:750;cursor:pointer;display:inline-block}
+button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #cc9e40;outline-offset:3px}
+button:hover{background:#11624f}.muted{color:#40584d}.small{font-size:13px;color:#476155}
+#output{white-space:pre-wrap;background:#f2f5ef;border-radius:16px;padding:22px;min-height:230px}
+footer{background:#06362c;color:#fff;padding:26px;text-align:center;font-size:13px}
+[dir="rtl"]{text-align:right}
+@media(max-width:720px){.grid{grid-template-columns:1fr}main{padding:35px 18px 70px}.panel{padding:22px}h1{font-size:2.8rem}}
+</style></head><body>
+<header><a href="/" aria-label="Amanikah homepage">✦ Amanikah</a></header>
+<main><span class="eyebrow">Amanikah · Free family resource</span>
+<h1>Good conversations begin with good questions.</h1>
+<p class="lead">A simple, private guide for two adults and any family members they choose to involve. Build a respectful checklist, then copy it for your own discussion.</p>
+<div class="grid"><section class="panel" aria-labelledby="create-title"><h2 id="create-title">Make your guide</h2>
+<label for="language">Language</label><select id="language"><option value="en">English</option><option value="hi">हिन्दी</option><option value="ur">اردو</option></select>
+<label for="topic">What would you like to discuss?</label><select id="topic"><option value="first">First conversation</option><option value="family">Family involvement</option><option value="future">Life after marriage</option><option value="financial">Wedding and financial expectations</option><option value="decline">Respectfully declining an introduction</option></select>
+<p class="small">No name, phone, family data or profile details are needed. This guide is generated in your browser and is not an AI assessment.</p>
+<button id="generate" type="button">Prepare my questions</button></section>
+<section class="panel" aria-labelledby="result-title"><h2 id="result-title">Your discussion guide</h2><div id="output" role="status" aria-live="polite">Choose a topic, then select “Prepare my questions.”</div><p><button id="copy" type="button" disabled>Copy guide</button></p><p class="small" id="copyStatus"></p></section></div>
+<p class="muted" style="margin-top:30px">Neither an AI matchmaking verdict nor a religious ruling. Each adult must freely consent to an introduction, and any family participation is optional. For member-only family permissions, use the authenticated membership workspace when available.</p>
+<p><a href="/account/register.html" class="button">Create a private profile ↗</a> &nbsp; <a href="/nikah-readiness/">Explore Nikah priorities</a></p>
+</main><footer>© Amanikah · Nikah with Trust. Nikah with Aman. · <a href="/privacy.html">Privacy</a> · <a href="/safety.html">Safety</a></footer>
+<script>
+(function(){
+"use strict";
+var data={
+en:{
+first:["What does a peaceful home mean to each of us?","What timelines do we have in mind for marriage?","Which topics do we want to discuss before family involvement?"],
+family:["When would each adult like family to take part?","Who may see our personal details?","How can relatives support us without taking over the decision?"],
+future:["How might we handle relocation or career changes?","How do we imagine sharing household responsibilities?","How will we approach disagreements respectfully?"],
+financial:["What kind of ceremony is comfortable for both families?","How do we discuss mahr respectfully and distinguish it from dowry?","Which financial expectations need clarity before moving forward?"],
+decline:["Thank you for taking time to speak with us.","After reflection, we do not wish to move forward with this introduction.","We wish you well and ask that shared personal details remain private."]
+},
+hi:{
+first:["आप दोनों के लिए सुकून भरा घर क्या मायने रखता है?","निकाह की समयसीमा के बारे में आपकी क्या अपेक्षाएँ हैं?","परिवार को शामिल करने से पहले किन विषयों पर बात होनी चाहिए?"],
+family:["दोनों वयस्क परिवार को कब शामिल करना चाहेंगे?","हमारी निजी जानकारी किसके साथ साझा की जा सकती है?","परिवार बिना निर्णय थोपे कैसे सहयोग कर सकता है?"],
+future:["स्थानांतरण या नौकरी में बदलाव को कैसे संभालेंगे?","घर की जिम्मेदारियाँ कैसे बाँटेंगे?","मतभेदों पर सम्मानपूर्वक कैसे चर्चा करेंगे?"],
+financial:["किस तरह का निकाह समारोह दोनों परिवारों के लिए सहज होगा?","महर और दहेज के बीच अंतर स्पष्ट रखकर कैसे बात करेंगे?","आगे बढ़ने से पहले कौन-सी आर्थिक अपेक्षाएँ स्पष्ट करें?"],
+decline:["बातचीत के लिए आपका धन्यवाद।","सोच-विचार के बाद हम इस परिचय को आगे नहीं बढ़ाना चाहते।","आपके लिए शुभकामनाएँ; कृपया साझा निजी जानकारी गोपनीय रखें।"]
+},
+ur:{
+first:["آپ دونوں کے نزدیک پُرسکون گھر کیا معنی رکھتا ہے؟","نکاح کے وقت کے بارے میں آپ کی کیا توقعات ہیں؟","خاندان کو شامل کرنے سے پہلے کن باتوں پر گفتگو ہونی چاہیے؟"],
+family:["دونوں بالغ افراد خاندان کو کب شامل کرنا چاہتے ہیں؟","ہماری نجی معلومات کس کے ساتھ شیئر کی جا سکتی ہیں؟","خاندان فیصلہ مسلط کیے بغیر کیسے مدد کر سکتا ہے؟"],
+future:["منتقلی یا ملازمت میں تبدیلی پر کیسے بات کریں گے؟","گھریلو ذمہ داریاں کیسے تقسیم ہوں گی؟","اختلافِ رائے میں احترام کیسے قائم رکھیں گے؟"],
+financial:["دونوں خاندانوں کے لیے کس قسم کی تقریب مناسب ہے؟","مہر اور جہیز میں فرق واضح رکھتے ہوئے کیسے بات کریں گے؟","آگے بڑھنے سے پہلے کون سی مالی توقعات واضح ہونی چاہئیں؟"],
+decline:["بات چیت کے لیے شکریہ۔","غور کے بعد ہم اس تعارف کو آگے نہیں بڑھانا چاہتے۔","آپ کے لیے نیک خواہشات؛ براہ کرم نجی تفصیلات خفیہ رکھیں۔"]
+}};
+var output=document.getElementById("output"),lang=document.getElementById("language"),topic=document.getElementById("topic"),copy=document.getElementById("copy"),status=document.getElementById("copyStatus");
+document.getElementById("generate").addEventListener("click",function(){var list=data[lang.value][topic.value];output.textContent=list.map(function(x,i){return (i+1)+". "+x}).join("\n\n");output.dir=lang.value==="ur"?"rtl":"ltr";copy.disabled=false;status.textContent=""});
+copy.addEventListener("click",function(){if(copy.disabled)return;var content=output.textContent;navigator.clipboard.writeText(content).then(function(){status.textContent="Copied to clipboard."}).catch(function(){status.textContent="Clipboard unavailable. Select and copy the text manually."})});
+})();
+</script></body></html>

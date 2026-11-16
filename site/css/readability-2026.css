@@ -1,0 +1,63 @@
+/* Amanikah typography + contrast recovery, Nov 2026.
+   Loaded last on the homepage to avoid legacy layers overriding text. */
+:root{--an-forest:#06392f;--an-jade:#146953;--an-ink:#182d28;--an-muted:#425b50;--an-gold:#d8b36a;--an-gold-ink:#70471d;--an-paper:#fffdf8}
+body.premium-home{font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif;font-size:17px;line-height:1.65;color:var(--an-ink);background:#fbf8f1}
+body.premium-home h1,body.premium-home h2,body.premium-home h3{font-family:"Cormorant Garamond",Georgia,serif;letter-spacing:-.025em;font-weight:600}
+body.premium-home .hero{background:radial-gradient(circle at 84% 31%,#17654f 0%,#0b4c3d 32%,#06382f 70%,#042b26 100%);color:#fff}
+body.premium-home .hero h1,body.premium-home .hero h1 *{color:#fffdf6}
+body.premium-home .hero h1 em{color:#f3dca7;font-weight:600}
+body.premium-home .hero-copy>p,body.premium-home .hero .hero-waitlist,body.premium-home .hero-detail{color:#f1f6ee;font-size:clamp(1rem,1.5vw,1.13rem);line-height:1.7}
+body.premium-home .hero .hero-waitlist a{color:#ffdf9d;text-decoration:underline;text-underline-offset:4px}
+body.premium-home .nav-links a:not(.button),body.premium-home .story-nav-link{color:#1e4538;font-size:15px;font-weight:650}
+body.premium-home .nav-links a:hover,body.premium-home .story-nav-link:hover{color:#61451e}
+body.premium-home .eyebrow,body.premium-home .ds-kicker,body.premium-home .cosmo-scene-text>span{color:var(--an-gold-ink);font-weight:750;font-size:12px}
+body.premium-home .hero .eyebrow,body.premium-home .hero .ds-kicker,body.premium-home .film-caption{color:#ffe6b6}
+body.premium-home p,body.premium-home .section-head>p,body.premium-home .ds-lede,body.premium-home .cosmo-scene-text p{font-size:16px;line-height:1.75;color:#395348}
+body.premium-home .hero p,body.premium-home .story-hero-inner p{color:#f4f2e9}
+body.premium-home .cosmo-scene-text p,body.premium-home .cosmo-media-note{color:#3b554a;font-size:15px}
+body.premium-home .intro-card p,body.premium-home .ds-card p,body.premium-home .honesty-tile span,body.premium-home .family-card span{color:#395347;font-size:15px;line-height:1.65}
+body.premium-home .film-caption{font-size:12px}
+body.premium-home .story-synthetic{font-size:12px;color:#fff6e5;text-shadow:0 2px 10px #000e}
+body.premium-home .story-hero-title{font-size:clamp(1.7rem,3vw,2.4rem);font-weight:700;color:#fff}
+body.premium-home .button,body.premium-home .ds-btn,body.premium-home .story-start{min-height:48px;font-size:15px;font-weight:750}
+body.premium-home .button-cream,body.premium-home .story-start,body.premium-home .ds-btn-gold{color:#113629;background:linear-gradient(115deg,#fae9c0,#dab874)}
+body.premium-home .button-primary,body.premium-home .ds-btn-primary{background:#0a4b3c;color:#fff}
+body.premium-home .button-outline{color:#0a4b3c;border-color:#8a754d}
+body.premium-home .hero .button-outline{color:#fff;border-color:#e9d7ae}
+body.premium-home .feature-pledge .button,body.premium-home .feature-quiz .button{background:#0a4b3c;color:#fff}
+body.premium-home .top-note{font-size:13px;letter-spacing:.025em}
+body.premium-home .story-hero-media{box-shadow:0 20px 58px #001c1699;border-color:#e8cd94}
+body.premium-home .story-hero-media:after,body.premium-home .story-hero-media::after{background:linear-gradient(to top,rgba(1,24,20,.97),rgba(1,24,20,.28) 57%,transparent 83%);pointer-events:none!important}
+body.premium-home .story-hero-inner{z-index:3;pointer-events:auto}
+body.premium-home .story-film-pane{background:#072b26}
+body.premium-home .story-right-pane{color:#17362c}
+body.premium-home .story-right-pane p,body.premium-home .story-right-pane .story-option{color:#25483a}
+body.premium-home .story-option{font-size:16px;line-height:1.5}
+body.premium-home .story-right-pane h2{color:#084536}
+body.premium-home a:focus-visible,body.premium-home button:focus-visible{outline:3px solid #d8ad54;outline-offset:3px}
+body.premium-home .an-launch-tools{background:#f6ebd9;border-block:1px solid #e6d0a4;padding:76px 0}
+body.premium-home .an-launch-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+body.premium-home .an-launch-card{padding:30px 28px;background:var(--an-paper);border:1px solid #e5d8bb;border-radius:20px;box-shadow:0 14px 35px #05372b0b}
+body.premium-home .an-launch-card h3{font-size:2rem;margin:10px 0;color:#083e34}
+body.premium-home .an-launch-card p{font-size:15.5px;color:#3a5146}
+body.premium-home .an-launch-card .eyebrow{display:block}
+body.premium-home .an-launch-card .button{margin-top:14px}
+@media(max-width:800px){body.premium-home .an-launch-grid{grid-template-columns:1fr}body.premium-home .hero-grid{min-height:auto}body.premium-home .hero-copy{padding:52px 0 20px}body.premium-home .hero h1{font-size:clamp(2.8rem,9vw,4.6rem);line-height:1.04}body.premium-home .story-hero-wrap{height:auto;min-height:390px}body.premium-home .story-hero-media{height:410px}body.premium-home .cosmo-editorial{padding:64px 0}body.premium-home .an-launch-tools{padding:60px 0}}
+@media(max-width:400px){body.premium-home .hero h1{font-size:clamp(2.65rem,11vw,3.3rem)}body.premium-home .story-hero-media{height:400px}body.premium-home .story-hero-wrap{min-height:420px}body.premium-home .cta-row .button{width:100%}body.premium-home .story-synthetic{font-size:11px}}
+@media(prefers-reduced-motion:reduce){body.premium-home *,body.premium-home *::before,body.premium-home *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+@media(min-width:801px) and (max-width:1180px){body.premium-home .an-launch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+body.premium-home [hidden]{display:none!important}
+body.premium-home .story-media-control{z-index:12;pointer-events:auto}
+body.premium-home .film-caption{pointer-events:none}
+
+/* A decorative arch must never intercept hero video controls. */
+body.premium-home .story-hero-wrap::before{pointer-events:none!important}
+body.premium-home .story-hero-media{position:relative;z-index:2}
+body.premium-home #storyHeroPause{top:76px;right:18px;z-index:20;scroll-margin-top:140px}
+
+/* Clear, accessible film toggle placed outside the ornament's stacking context. */
+body.premium-home .hero-copy .hero-film-control{position:relative!important;display:inline-flex;align-items:center;justify-content:center;width:auto;height:auto;min-height:46px;padding:11px 20px;margin:9px 0 16px;top:auto!important;right:auto!important;z-index:4;border:1px solid #e6cf9a;border-radius:999px;background:#d9b66e;color:#083b30;font:700 15px "Source Sans 3",system-ui,sans-serif;cursor:pointer;letter-spacing:.01em;box-shadow:0 8px 20px #001e1438}
+body.premium-home .hero-copy .hero-film-control:hover{background:#f5d998}
+@media(max-width:400px){body.premium-home .hero-copy .hero-film-control{width:100%}}
