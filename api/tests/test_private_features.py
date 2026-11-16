@@ -75,6 +75,39 @@ class Tests(unittest.TestCase):
         self.assertEqual(status,503)
         self.assertEqual(body["code"],"AI_NOT_CONFIGURED")
 
+    def test_wali_brief_requires_explicit_scope_and_acceptance(self):
+        brief={"marriageGoals":"A kind home","familyExpectations":"Respectful support",
+               "livingPlans":"Discuss moving","weddingExpectations":"Simple nikah",
+               "questions":"What would help both families?"}
+        self.assertEqual(self.feature.save_wali_brief("adult",{"brief":brief})[0],200)
+        self.assertEqual(self.feature.wali_brief("adult")["brief"],brief)
+        self.assertEqual(self.feature.save_wali_brief("adult",{"brief":{"questions":"x"*351}})[0],400)
+        self.assertEqual(self.feature.shared("mother","adult")[0],403)
+        self.feature.invite("adult",{"email":"m@example.test","scopes":["city"]})
+        first=self.feature.family_list("mother")["received"][0]
+        self.feature.respond("mother",{"invitationId":first["id"],"accept":True})
+        self.assertNotIn("waliBrief",self.feature.shared("mother","adult")[1]["shared"])
+
+        # Granting additional permission resets consent until the invitee accepts again.
+        self.feature.invite("adult",{"email":"m@example.test","scopes":["wali_brief"]})
+        self.assertEqual(self.feature.shared("mother","adult")[0],403)
+        second=self.feature.family_list("mother")["received"][0]
+        self.assertFalse(second["accepted"])
+        self.feature.respond("mother",{"invitationId":second["id"],"accept":True})
+        shared=self.feature.shared("mother","adult")[1]["shared"]
+        self.assertEqual(shared["waliBrief"]["marriageGoals"],"A kind home")
+        self.assertNotIn("city",shared)
+        self.assertEqual(self.feature.shared("stranger","adult")[0],403)
+
+        self.feature.delete_wali_brief("adult")
+        self.assertNotIn("waliBrief",self.feature.shared("mother","adult")[1]["shared"])
+        self.feature.save_wali_brief("adult",{"brief":{"questions":"A new private note"}})
+        self.feature.revoke("adult",{"invitationId":second["id"]})
+        self.assertEqual(self.feature.shared("mother","adult")[0],403)
+        self.feature.purge_member("adult")
+        self.assertIsNone(self.store.conn.execute(
+            "SELECT owner_id FROM wali_briefs WHERE owner_id='adult'").fetchone())
+
     def test_audio_mime_and_magic_rejected(self):
         status,body=self.feature.save_voice("adult",FakeHTTP(b"not really webm"*30,"audio/webm"))
         self.assertEqual(status,415)
