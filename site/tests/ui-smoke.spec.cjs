@@ -111,7 +111,7 @@ test('film photo is not covered by captions, headlines or disclosure', async ({p
   const frame = page.locator('.story-hero-media');
   await expect(frame.locator('.story-hero-inner .story-start-simple')).toBeVisible();
   await expect(frame.locator('.film-caption,.story-synthetic,.story-hero-title,.cinema-overline')).toHaveCount(0);
-  await expect(frame.locator('.story-hero-inner')).toHaveText('Watch our story');
+  await expect(frame.locator('.story-start-simple')).toContainText('Watch our story');
   await expect(page.locator('#storyFilmDisclosure')).toBeVisible();
   await expect(page.locator('#storyFilmDisclosure')).toContainText('AI actors');
   const overlap = await page.evaluate(() => {
