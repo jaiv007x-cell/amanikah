@@ -73,7 +73,10 @@
 
   function notice(catalog) {
     var payment = catalog.payment || {};
-    return '<p class="notice">' + esc(payment.message || catalog.scheduleNote) + " Sandbox figures are not a live charge.</p>";
+    var isLive = payment.mode === "live" && payment.live === true && payment.configured === true;
+    var label = isLive ? "" : "Paid services are not being sold yet. ";
+    var disclaimer = isLive ? "" : " Example figures are for testing only and are not live charges.";
+    return '<p class="notice">' + esc(label + (payment.message || catalog.scheduleNote || "") + disclaimer) + "</p>";
   }
 
   function list(items) {
@@ -100,14 +103,17 @@
     loadCatalog().then(function (catalog) {
       root.innerHTML = notice(catalog) +
         '<div class="prices">' +
-        '<article class="price"><h2>' + esc(catalog.free.name) + '</h2><p class="fee">No fee</p>' + list(catalog.free.includes) +
+        '<article class="price" id="free-membership"><h2>' + esc(catalog.free.name) + '</h2><p class="fee">No fee</p>' + list(catalog.free.includes) +
         '<p><a class="btn btn-emerald" href="/account/register.html">Create a private profile</a></p></article>' +
         catalog.services.map(function (service) {
-          return '<article class="price"><h2>' + esc(service.name) + '</h2><p class="fee">' + esc(money(service.pricePaise, catalog.currency)) + '</p><p>' + esc(service.summary) + '</p>' +
+          return '<article class="price" id="' + esc(service.id) + '"><h2>' + esc(service.name) + '</h2><p class="fee">' + esc(money(service.pricePaise, catalog.currency)) + '</p><p>' + esc(service.summary) + '</p>' +
             '<p><a class="btn btn-ghost" href="/services/#' + esc(service.id) + '">What is and is not included</a></p></article>';
         }).join("") +
         "</div>";
-    }).catch(function (err) { root.innerHTML = '<p class="err">' + esc(err.message) + "</p>"; });
+    }).catch(function () {
+      // The server-rendered catalog remains available during API or JS failures.
+      root.insertAdjacentHTML("afterbegin", '<p class="notice" role="status">The live catalog could not be refreshed. Example prices below are not available for purchase.</p>');
+    });
   }
 
   function renderServices(root) {
