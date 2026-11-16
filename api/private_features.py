@@ -216,8 +216,29 @@ class PrivateFeatures:
             result=subprocess.run(["ffprobe","-v","error","-show_entries","format=duration:stream=codec_type",
                   "-of","json",str(target)],capture_output=True,text=True,timeout=6,check=True)
             parsed=json.loads(result.stdout)
-            seconds=float(parsed.get("format",{}).get("duration") or 0)
+            duration_raw = parsed.get("format",{}).get("duration")
+            try:
+                seconds = float(duration_raw)
+            except (TypeError, ValueError):
+                seconds = 0
             streams=[x.get("codec_type") for x in parsed.get("streams",[])]
+            # Browser MediaRecorder often writes non-seekable WebM without
+            # format.duration; infer playback length from packet timestamps.
+            if seconds <= 0:
+                packet_result = subprocess.run(
+                    ["ffprobe", "-v", "error", "-select_streams", "a:0",
+                     "-show_entries", "packet=pts_time,duration_time",
+                     "-of", "json", str(target)],
+                    capture_output=True, text=True, timeout=6, check=True
+                )
+                packets = json.loads(packet_result.stdout).get("packets", [])
+                ends = []
+                for packet in packets:
+                    try:
+                        ends.append(float(packet["pts_time"]) + float(packet.get("duration_time") or 0))
+                    except (KeyError, TypeError, ValueError):
+                        pass
+                seconds = max(ends, default=0)
             if not 1<=seconds<=60 or not streams or any(x!="audio" for x in streams):raise ValueError("Unexpected streams")
         except (OSError,ValueError,subprocess.SubprocessError,TimeoutError):
             target.unlink(missing_ok=True)
