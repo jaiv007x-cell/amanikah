@@ -196,7 +196,10 @@
       })
     }).then(function(res) {
       return res.json().then(function(data) {
-        if (!res.ok || !data.ok) throw new Error(data.message || "The guide could not respond.");
+        if (!res.ok || !data.ok) {
+          if (data.code === "AI_RATE_LIMITED") { consent.checked = false; setAiNotice(); }
+          throw new Error(data.message || "The guide could not respond.");
+        }
         return data;
       });
     }).then(function(data) {
