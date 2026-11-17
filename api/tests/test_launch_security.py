@@ -60,7 +60,7 @@ class Security(unittest.TestCase):
             port=sock.getsockname()[1]
             sock.close()
             env=dict(os.environ,
-                OPS_ADMIN_TOKEN="synthetic-operator-token",SESSION_PEPPER="testing-pepper",
+                OPS_ADMIN_TOKEN="synthetic-operator-token",SESSION_PEPPER="ci-only-pepper-ci-only-pepper-ci-only-pepper-ci-only-pepper-",
                 BIND="127.0.0.1",PORT=str(port),
                 AMANIKAH_DB=str(Path(tmp)/"test.sqlite"),
                 VOICE_PRIVATE_DIR=str(Path(tmp)/"private"),
