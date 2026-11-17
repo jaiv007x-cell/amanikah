@@ -23,6 +23,7 @@ from urllib import request as urlrequest
 from urllib.parse import parse_qs, urlparse
 
 from private_features import PrivateFeatures
+from al_wali import AlWali
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 LEAD_STATUSES = ("new", "contacted", "qualified", "converted", "closed")
@@ -956,6 +957,9 @@ class Store:
 class Handler(BaseHTTPRequestHandler):
     store: Store = None
     private_features: PrivateFeatures = None
+    al_wali: AlWali = None
+    wali_limiter = RateLimiter(8, 300)
+    wali_global_limiter = RateLimiter(100, 60)
     limiter = RateLimiter(30, 60)
     admin_token = ""
 
@@ -1078,6 +1082,22 @@ class Handler(BaseHTTPRequestHandler):
         # Public share page: return real HTTP 410 when the unlisted link was revoked.
         if method == "GET" and path == "/simple-nikah/share.html":
             return self._share_page(qs, write_body)
+
+        if path == "/api/amanikah/al-wali/status" and method == "GET":
+            return self._send(200, self.al_wali.status(), write_body)
+
+        if path == "/api/amanikah/al-wali/chat" and method == "POST":
+            # An optional, text-only public helper: separately rate-limited to manage
+            # inference cost and prevent excessive collection of visitor questions.
+            if not (self.wali_limiter.allow("wali:" + self._client())
+                    and self.wali_global_limiter.allow("all")):
+                return self._send(429, {"ok": False, "code": "RATE_LIMITED",
+                                        "message": "Please try again later. You can still use our free guides."}, write_body)
+            body = self._json()
+            if body is None:
+                return self._send(400, {"ok": False, "code": "BAD_JSON"}, write_body)
+            code, response = self.al_wali.handle(body)
+            return self._send(code, response, write_body)
 
         if path == "/api/amanikah/health":
             return self._send(200, {
@@ -1307,6 +1327,7 @@ def main():
     Handler.store = store
     store.private_features = PrivateFeatures(store)
     Handler.private_features = store.private_features
+    Handler.al_wali = AlWali(conf)
     Handler.admin_token = conf.get("OPS_ADMIN_TOKEN") or ""
     if not Handler.admin_token:
         raise SystemExit("OPS_ADMIN_TOKEN is required")
