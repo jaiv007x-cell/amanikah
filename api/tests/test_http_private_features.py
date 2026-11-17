@@ -92,7 +92,7 @@ class Integration(unittest.TestCase):
         code,verify=cls.request("POST","/ops/members/"+mid+"/verify-link",data={},admin=True)
         assert code==200,(code,verify)
         from urllib.parse import urlparse,parse_qs
-        token=parse_qs(urlparse(verify["verifyUrl"]).query)["token"][0]
+        token=parse_qs(urlparse(verify["verifyUrl"]).fragment)["token"][0]
         code,checked=cls.request("POST","/auth/verify",data={"token":token})
         assert code==200,(code,checked)
         code,logged=cls.request("POST","/auth/login",data={"email":email,"password":"secure-test-password-1"})
