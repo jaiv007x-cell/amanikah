@@ -1138,6 +1138,8 @@ class Handler(BaseHTTPRequestHandler):
     wali_ai_limiter = RateLimiter(8, 300)
     wali_global_limiter = RateLimiter(100, 60)
     limiter = RateLimiter(30, 60)
+    analytics_limiter = RateLimiter(120, 60)
+    analytics_global_limiter = RateLimiter(3000, 60)
     admin_token = ""
 
     def finish(self):
@@ -1378,6 +1380,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(status, payload, write_body)
 
         if method == "POST" and path == "/api/amanikah/auth/verify":
+            if not self.limiter.allow("verification:" + self._client()):
+                return self._send(429, {"ok":False,"code":"RATE_LIMITED"}, write_body)
             body = self._json() or {}
             token = body.get("token") or (qs.get("token") or [None])[0]
             status, payload = store.verify_email(str(token or ""))
@@ -1439,6 +1443,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(status, payload, write_body)
 
         if method == "POST" and path == "/api/amanikah/analytics/events":
+            if not (self.analytics_limiter.allow("analytics:" + self._client())
+                    and self.analytics_global_limiter.allow("all")):
+                return self._send(429, {"ok":False,"code":"RATE_LIMITED"}, write_body)
             body = self._json()
             if body is None:
                 return self._send(400, {"ok": False, "code": "BAD_JSON"}, write_body)
@@ -1460,6 +1467,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(status, payload, write_body)
 
         if method == "POST" and path.startswith("/api/amanikah/shares/") and path.endswith("/revoke"):
+            if not self.limiter.allow("share-revoke:" + self._client()):
+                return self._send(429, {"ok":False,"code":"RATE_LIMITED"}, write_body)
             share_id = path.rstrip("/").split("/")[-2]
             body = self._json() or {}
             status, payload = store.revoke_share(share_id, body.get("revokeToken") or body.get("token") or "")
