@@ -1,0 +1,53 @@
+name: One-time set verified Amanikah Caddy proxy trust
+on:
+  push:
+    branches: [security/launch-gates-matching-hardening-20261117]
+    paths: ['.github/workflows/configure-amanikah-trusted-proxy-20261117.yml']
+permissions:
+  contents: read
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 6
+    env:
+      AMANIKAH_VPS_HOST: ${{ secrets.AMANIKAH_VPS_HOST }}
+      AMANIKAH_VPS_USER: ${{ secrets.AMANIKAH_VPS_USER }}
+      AMANIKAH_VPS_KEY: ${{ secrets.AMANIKAH_VPS_KEY }}
+      AMANIKAH_SSH_KNOWN_HOSTS: ${{ secrets.AMANIKAH_SSH_KNOWN_HOSTS }}
+    steps:
+      - name: Pin proxy trust to actual named Caddy container IP without printing secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$AMANIKAH_VPS_KEY" > ~/.ssh/id_deploy
+          printf '%s\n' "$AMANIKAH_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_deploy ~/.ssh/known_hosts
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i ~/.ssh/id_deploy \
+            "$AMANIKAH_VPS_USER@$AMANIKAH_VPS_HOST" \
+            'if [ "$(id -u)" -eq 0 ]; then exec bash -s; else exec sudo -n bash -s; fi' <<'REMOTE'
+          set -Eeuo pipefail
+          umask 077
+          ENV=/root/amanikah-api/ops.env
+          test -s "$ENV"
+          CADDY_ADDRESS="$(docker inspect -f '{{with index .NetworkSettings.Networks "airrates_edge"}}{{.IPAddress}}{{end}}' airrates-caddy-1)"
+          python3 - "$ENV" "$CADDY_ADDRESS" <<'PY'
+          import ipaddress,pathlib,sys,os
+          env=pathlib.Path(sys.argv[1])
+          addr=ipaddress.ip_address(sys.argv[2])
+          if not addr.is_private or addr.version!=4:
+              raise SystemExit("REFUSING_UNEXPECTED_CADDY_ADDRESS")
+          cidr=str(addr)+"/32"
+          text=env.read_text()
+          lines=[line for line in text.splitlines()
+                 if not line.startswith("AMANIKAH_TRUSTED_PROXY_CIDRS=")]
+          lines.append("AMANIKAH_TRUSTED_PROXY_CIDRS="+cidr)
+          before=env.with_name("ops.env.before-trusted-proxy")
+          before.write_text(text)
+          os.chmod(before,0o600)
+          env.write_text("\n".join(lines)+"\n")
+          os.chmod(env,0o600)
+          print("PASS trusted-proxy configuration pinned to a verified Caddy container address")
+          PY
+          REMOTE
