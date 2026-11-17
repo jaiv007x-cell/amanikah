@@ -673,6 +673,13 @@ class Store:
         self.conn.commit()
         return 200, {"ok": True, "token": token, "member": self.public_member(row["id"])}
 
+    def logout(self, token: str):
+        if token:
+            self.conn.execute("DELETE FROM sessions WHERE token_hash=?",
+                              (hashlib.sha256(token.encode()).hexdigest(),))
+            self.conn.commit()
+        return 200, {"ok": True, "signedOut": True}
+
     def session_member(self, token: str):
         if not token:
             return None
@@ -1388,6 +1395,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(400, {"ok": False, "code": "BAD_JSON"}, write_body)
             status, payload = store.register_member(body)
             return self._send(status, payload, write_body)
+
+        if method == "POST" and path == "/api/amanikah/auth/logout":
+            return self._send(*store.logout(self._bearer()), write_body)
 
         if method == "POST" and path == "/api/amanikah/auth/login":
             if not self.limiter.allow("login:" + self._client()):
