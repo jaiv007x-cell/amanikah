@@ -958,7 +958,8 @@ class Handler(BaseHTTPRequestHandler):
     store: Store = None
     private_features: PrivateFeatures = None
     al_wali: AlWali = None
-    wali_limiter = RateLimiter(8, 300)
+    wali_limiter = RateLimiter(30, 300)
+    wali_ai_limiter = RateLimiter(8, 300)
     wali_global_limiter = RateLimiter(100, 60)
     limiter = RateLimiter(30, 60)
     admin_token = ""
@@ -1096,6 +1097,12 @@ class Handler(BaseHTTPRequestHandler):
             body = self._json()
             if body is None:
                 return self._send(400, {"ok": False, "code": "BAD_JSON"}, write_body)
+            if (isinstance(body, dict) and body.get("consentToAI") is True
+                    and self.al_wali.enabled
+                    and not self.wali_ai_limiter.allow("wali-ai:" + self._client())):
+                return self._send(429, {"ok": False, "code": "AI_RATE_LIMITED",
+                                        "message": "AI limit reached for now. You can still use the free guided questions."},
+                                  write_body)
             code, response = self.al_wali.handle(body)
             return self._send(code, response, write_body)
 
