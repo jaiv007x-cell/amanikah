@@ -172,6 +172,13 @@ class Store:
             self._thread.conn = conn
         return conn
 
+    def matchmaking_ready(self):
+        # A single environment toggle is not enough to make real people visible.
+        # These flags are operator attestations, not substitutes for evidence.
+        gates = ("MATCHMAKING_LIVE", "AMANIKAH_SAFETY_REVIEW_APPROVED",
+                 "AMANIKAH_OFFSITE_RESTORE_VERIFIED", "AMANIKAH_REAL_ACCOUNT_QA_APPROVED")
+        return all(self.conf.get(name) == "1" for name in gates)
+
     def close_thread_connection(self):
         conn = getattr(self._thread, "conn", None)
         if conn is not None:
@@ -456,7 +463,7 @@ class Store:
             "reference": reference,
             "status": "new",
             "mode": mode,
-            "matchmakingLive": self.conf.get("MATCHMAKING_LIVE") == "1",
+            "matchmakingLive": self.matchmaking_ready(),
             "message": "Your waitlist request was accepted. Matchmaking is not operational yet; an operator will review this request.",
             "notification": notify,
         }
@@ -950,7 +957,7 @@ class Store:
                 return 404, {"ok": False, "code": "NOT_FOUND"}
             old = row["status"]
             if status in ("open", "mutual"):
-                if self.conf.get("MATCHMAKING_LIVE") != "1":
+                if not self.matchmaking_ready():
                     return 409, {"ok": False, "code": "MATCHMAKING_NOT_LIVE"}
                 if not self._intro_pair(row):
                     return 403, {"ok": False, "code": "TWO_VERIFIED_ADULTS_REQUIRED"}
@@ -975,7 +982,7 @@ class Store:
         return 200, {"ok": True, "id": case_id, "status": status}
 
     def list_member_introductions(self, member_id):
-        if self.conf.get("MATCHMAKING_LIVE") != "1":
+        if not self.matchmaking_ready():
             return 409, {"ok": False, "code": "MATCHMAKING_NOT_LIVE"}
         if not self._eligible_intro_member(member_id):
             return 403, {"ok": False, "code": "INELIGIBLE"}
@@ -995,7 +1002,7 @@ class Store:
         } for row in rows]}
 
     def respond_member_introduction(self, member_id, case_id, body):
-        if self.conf.get("MATCHMAKING_LIVE") != "1":
+        if not self.matchmaking_ready():
             return 409, {"ok": False, "code": "MATCHMAKING_NOT_LIVE"}
         if not isinstance(body, dict) or body.get("decision") not in ("accept", "decline"):
             return 400, {"ok": False, "code": "VALIDATION"}
@@ -1073,7 +1080,7 @@ class Store:
         by_status = {s: count("SELECT COUNT(*) FROM leads WHERE status=? AND deleted_at IS NULL", s) for s in LEAD_STATUSES}
         return {
             "mode": "waitlist" if self.conf.get("WAITLIST_MODE", "1") == "1" else "live",
-            "matchmakingLive": self.conf.get("MATCHMAKING_LIVE") == "1",
+            "matchmakingLive": self.matchmaking_ready(),
             "mailConfigured": self.mailer.configured,
             "operatorEmailConfigured": bool(self.conf.get("OPERATOR_EMAIL")),
             "leads": by_status,
@@ -1321,7 +1328,7 @@ class Handler(BaseHTTPRequestHandler):
                 "ok": True,
                 "service": "amanikah-api",
                 "waitlistMode": store.conf.get("WAITLIST_MODE", "1") == "1",
-                "matchmakingLive": store.conf.get("MATCHMAKING_LIVE") == "1",
+                "matchmakingLive": store.matchmaking_ready(),
                 "mailConfigured": store.mailer.configured,
             }, write_body)
 
