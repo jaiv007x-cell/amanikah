@@ -1354,7 +1354,9 @@ class Handler(BaseHTTPRequestHandler):
         if method == "POST" and path == "/api/amanikah/auth/register":
             # UI-only disablement is insufficient: the API must also block
             # unusable/unverified registrations during mail-free early access.
-            if not (store.mailer.configured or store.conf.get("AMANIKAH_ALLOW_OPERATOR_VERIFICATION") == "1"):
+            test_only = (store.conf.get("AMANIKAH_ALLOW_OPERATOR_VERIFICATION") == "1"
+                         and self.server.server_address[0] in ("127.0.0.1", "::1"))
+            if not (store.mailer.configured or test_only):
                 return self._send(503, {"ok": False, "code": "REGISTRATION_PAUSED",
                                         "message": "New accounts are paused until secure verification is available."},
                                   write_body)
