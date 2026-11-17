@@ -72,7 +72,7 @@ TOPICS = {
     }
 }
 INTENTS = (
-    ("safety", r"unsafe|danger|harass|abuse|blackmail|threat|scam|otp|fraud|pressur|force|زبردستی|دھمکی|धमकी|जबरदस्ती"),
+    ("safety", r"unsafe|danger|harass|abuse|blackmail|threat|scam|otp|fraud|forced marriage|coercion|زبردستی|دھمکی|धमकी|जबरदस्ती"),
     ("mahr", r"mahr|mehr|dowry|jahez|مہر|جہیز|मेहर|दहेज"),
     ("wali", r"wali|guardian|chaperone|والد|ولی|سرپرست|वली|अभिभावक"),
     ("nri", r"nri|overseas|abroad|visa|relocat|immigra|विदेश|بیرون"),
@@ -151,8 +151,13 @@ class AlWali:
                 return 400, {"ok": False, "code": "BAD_HISTORY", "message": "Please clear private details from chat history."}
             messages.append({"role": msg["role"], "content": msg["content"]})
         messages.append({"role": "user", "content": q})
-        payload = {"model": self.conf.get("GROQ_MODEL") or DEFAULT_MODEL, "messages": messages,
-                   "temperature": 0.35, "max_completion_tokens": 450, "stream": False}
+        model = self.conf.get("GROQ_MODEL") or DEFAULT_MODEL
+        payload = {"model": model, "messages": messages,
+                   "temperature": 0.35, "max_completion_tokens": 700, "stream": False}
+        if model.startswith("openai/gpt-oss-"):
+            # The low effort is adequate for short visitor guidance; do not
+            # return or inadvertently display hidden reasoning text.
+            payload.update({"reasoning_effort": "low", "include_reasoning": False})
         req = urlrequest.Request(
             GROQ_CHAT_URL, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             headers={"Content-Type": "application/json",
