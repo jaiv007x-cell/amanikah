@@ -40,6 +40,23 @@ Restart after edits:
 cd /root/amanikah-api && docker compose up -d --force-recreate
 ```
 
+## Al Wali public assistant (Groq, optional)
+
+The guided floating assistant works immediately with no provider key at `/api/amanikah/al-wali/status` and `/api/amanikah/al-wali/chat`.
+
+To enable optional AI **after** assessing the provider's data controls:
+
+1. In the VPS's private `/root/amanikah-api/ops.env` (never in GitHub), set `GROQ_API_KEY=gsk_...`.
+2. Optionally set `GROQ_MODEL=openai/gpt-oss-20b` (currently recommended production model). It defaults to that model if unset.
+3. Restart only the Amanikah API: `cd /root/amanikah-api && docker compose up -d --force-recreate api`.
+4. Check `curl -fsS https://amanikah.com/api/amanikah/al-wali/status` for `"aiAvailable":true`. Never print the real key.
+5. In Groq Console → Data Controls, consider enabling Zero Data Retention; review its jurisdiction, processor terms and retention policy for your users.
+6. If AI should be off, set `AMANIKAH_WALI_AI_ENABLED=0` and recreate the API container. The free guided mode continues working.
+
+The presence of the key enables **only** the Al Wali AI feature; visitors must also actively select the AI switch. Public questions and previous six text messages are sent only with that choice. No profile or voice media is read, no server chat database is created, and the private Family Assistant remains separately governed by `AMANIKAH_AI_ENABLED` and `OPENAI_API_KEY`.
+
+Al Wali is not a fatwa service or marriage-suitability score. Rate limits are enforced on the server with a no-network fallback. The AI is not a human wali.
+
 ## Product flags
 
 - `WAITLIST_MODE=1` — public signup labeled waitlist (recommended until matchmaking is live).
