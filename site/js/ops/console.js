@@ -241,9 +241,9 @@
     var fd = new FormData(e.target);
     call("/cases", {
       method: "POST",
-      body: { leadId: fd.get("leadId") || null, peerLabel: fd.get("peerLabel"), notes: fd.get("notes") },
+      body: { leadId: fd.get("leadId") || null, memberId: fd.get("memberId") || null, peerMemberId: fd.get("peerMemberId") || null, peerLabel: fd.get("peerLabel"), notes: fd.get("notes") },
     }).then(function (r) {
-      statusEl.textContent = r.body.ok ? "Case " + r.body.case.reference : (r.body.message || "Case failed");
+      statusEl.textContent = r.body.ok ? "Private draft " + r.body.case.reference + " created; no match has been agreed." : (r.body.message || r.body.code || "Case failed");
       if (r.body.ok) loadAll();
     });
   });
