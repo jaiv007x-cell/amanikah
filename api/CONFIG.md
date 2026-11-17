@@ -57,6 +57,44 @@ The presence of the key enables **only** the Al Wali AI feature; visitors must a
 
 Al Wali is not a fatwa service or marriage-suitability score. Rate limits are enforced on the server with a no-network fallback. The AI is not a human wali.
 
+## Secure launch gates and reverse proxy
+
+Matching cannot become live merely by changing `MATCHMAKING_LIVE=1`.
+The backend and the protected release require `AMANIKAH_SAFETY_REVIEW_APPROVED=1`,
+`AMANIKAH_OFFSITE_RESTORE_VERIFIED=1`, and
+`AMANIKAH_REAL_ACCOUNT_QA_APPROVED=1`. These are human-signed assertions,
+not automated substitutes for safety staffing, restoring off-site encrypted
+backups, and a real three-account safeguarding test. **Keep all off** until
+these are independently evidenced. In early access with
+`AMANIKAH_ALLOW_MAIL_SKIP=1`, the deployment refuses any live-matching flag.
+
+When email is unavailable, public `POST /auth/register` returns 503,
+even if someone bypasses the disabled registration form. The
+`AMANIKAH_ALLOW_OPERATOR_VERIFICATION=1` exception is intended **only**
+for isolated 127.0.0.1 integration tests; the deployed public API will not
+honor it. Use a proper verification and recovery provider before enrolling
+real users.
+
+The API trusts `X-Forwarded-For` only from
+`AMANIKAH_TRUSTED_PROXY_CIDRS`. Configure exactly the internal Caddy proxy
+IP address, checked with `docker network inspect airrates_edge` and
+`docker inspect`, e.g. `172.20.0.5/32` **only if that is the actual
+verified address**. The value is not a recommendation to trust an entire
+Docker bridge subnet. If omitted, rate limits use the socket peer instead.
+Caddy must be configured to overwrite untrusted forwarded headers.
+
+New email verification links use `#token=...` so sensitive one-use tokens
+are not transmitted as HTTP URL query strings. The verification page
+submits them by POST, removes the fragment from browser history and still
+supports legacy query links.
+
+`/api/amanikah/me/introductions` is a protected future workflow:
+only eligible verified members receive anonymous invitation references;
+each can accept/decline, while an operator cannot mark an introduction
+mutual until **both** independently accepted. Closing, declining or
+withdrawing consent stops the case. Contact information and profiles are
+**never** automatically disclosed.
+
 ## Product flags
 
 - `WAITLIST_MODE=1` — public signup labeled waitlist (recommended until matchmaking is live).
