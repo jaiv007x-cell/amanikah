@@ -1,0 +1,31 @@
+name: One-time Amanikah release secret and proxy preflight
+on:
+  push:
+    branches: [security/launch-gates-matching-hardening-20261117]
+    paths: ['.github/workflows/audit-amanikah-security-preflight-20261117.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 6
+    env:
+      AMANIKAH_VPS_HOST: ${{ secrets.AMANIKAH_VPS_HOST }}
+      AMANIKAH_VPS_USER: ${{ secrets.AMANIKAH_VPS_USER }}
+      AMANIKAH_VPS_KEY: ${{ secrets.AMANIKAH_VPS_KEY }}
+      AMANIKAH_SSH_KNOWN_HOSTS: ${{ secrets.AMANIKAH_SSH_KNOWN_HOSTS }}
+    steps:
+      - name: Verify existing authentication configuration without printing secret values
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$AMANIKAH_VPS_KEY" > ~/.ssh/id_deploy
+          printf '%s\n' "$AMANIKAH_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_deploy ~/.ssh/known_hosts
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i ~/.ssh/id_deploy \
+            "$AMANIKAH_VPS_USER@$AMANIKAH_VPS_HOST" \
+            'if [ "$(id -u)" -eq 0 ]; then DOCKER=docker; else DOCKER="sudo -n docker"; fi; \
+            $DOCKER exec amanikah-api python -c '"'"'import os; c=os.environ; print("PEPPER_LENGTH_OK="+str(len(c.get("SESSION_PEPPER",""))>=32)); print("ADMIN_TOKEN_LENGTH_OK="+str(len(c.get("OPS_ADMIN_TOKEN",""))>=20)); print("MATCHING_OFF="+str(c.get("MATCHMAKING_LIVE","0")!="1")); print("TRUSTED_PROXY_SET="+str(bool(c.get("AMANIKAH_TRUSTED_PROXY_CIDRS")))); print("EMAIL_ON="+str(bool(c.get("RESEND_API_KEY") or c.get("SMTP_HOST"))))'"'"'; \
+            $DOCKER network inspect airrates_edge --format "{{json .Containers}}" | python3 -c '"'"'import json,sys,ipaddress; d=json.load(sys.stdin); options=[(v.get("Name",""),v.get("IPv4Address","")) for v in d.values() if "caddy" in v.get("Name","").lower()]; print("CADDY_PROXY_IPS="+",".join(n+":"+ip for n,ip in options))'"'"''
