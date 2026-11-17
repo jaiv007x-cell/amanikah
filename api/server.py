@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import hmac
 import json
 import os
@@ -153,12 +154,30 @@ class Store:
         self.pepper = pepper
         self.mailer = mailer
         self.conf = conf
-        self.conn = sqlite3.connect(db_path, check_same_thread=False)
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA journal_mode=WAL")
-        self.conn.execute("PRAGMA foreign_keys=ON")
-        self.lock = threading.Lock()
+        # A ThreadingHTTPServer must never share a transaction across requests.
+        # SQLite connections are thread-local; WAL permits concurrent readers.
+        self.db_path = db_path
+        self._thread = threading.local()
+        self.lock = threading.RLock()
         self._migrate()
+
+    @property
+    def conn(self):
+        conn = getattr(self._thread, "conn", None)
+        if conn is None:
+            conn = sqlite3.connect(self.db_path, timeout=15)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys=ON")
+            conn.execute("PRAGMA busy_timeout=15000")
+            conn.execute("PRAGMA journal_mode=WAL")
+            self._thread.conn = conn
+        return conn
+
+    def close_thread_connection(self):
+        conn = getattr(self._thread, "conn", None)
+        if conn is not None:
+            conn.close()
+            del self._thread.conn
 
     def _migrate(self):
         self.conn.executescript(
@@ -601,6 +620,9 @@ class Store:
             return 401, {"ok": False, "code": "INVALID_CREDENTIALS"}
         if not row["email_verified"]:
             return 403, {"ok": False, "code": "EMAIL_UNVERIFIED", "message": "Verify your email before signing in."}
+        consent = self.conn.execute("SELECT withdrawn FROM consents WHERE member_id=?", (row["id"],)).fetchone()
+        if not consent or consent["withdrawn"]:
+            return 403, {"ok": False, "code": "CONSENT_WITHDRAWN"}
         token = secrets.token_urlsafe(32)
         self.conn.execute(
             "INSERT INTO sessions (token_hash, member_id, expires_at, created_at) VALUES (?,?,?,?)",
@@ -627,7 +649,10 @@ class Store:
         sess = self.conn.execute("SELECT expires_at FROM sessions WHERE token_hash = ?", (th,)).fetchone()
         if datetime.fromisoformat(sess["expires_at"]).replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
             return None
-        if row["is_demo"]:
+        if row["is_demo"] or not row["email_verified"]:
+            return None
+        consent = self.conn.execute("SELECT withdrawn FROM consents WHERE member_id=?", (row["id"],)).fetchone()
+        if not consent or consent["withdrawn"]:
             return None
         return row
 
@@ -672,6 +697,8 @@ class Store:
             self.private_features.purge_member(member_id)
         self.conn.execute("UPDATE consents SET withdrawn=1, updated_at=? WHERE member_id=?", (utcnow(), member_id))
         self.conn.execute("UPDATE profiles SET visibility='private' WHERE member_id=?", (member_id,))
+        # Withdrawing consent also immediately invalidates all active sessions.
+        self.conn.execute("DELETE FROM sessions WHERE member_id=?", (member_id,))
         self.conn.commit()
         self.audit("consent_withdrawn", actor=member_id, entity_type="member", entity_id=member_id)
         return 200, {"ok": True, "withdrawn": True}
@@ -775,12 +802,20 @@ class Store:
         if name not in allowed:
             return 400, {"ok": False, "code": "UNKNOWN_EVENT"}
         props = body.get("props") or {}
-        # Strip matrimonial private content
-        for banned in ("note", "intentions", "message", "password", "profile", "phone"):
-            props.pop(banned, None)
+        if not isinstance(props, dict):
+            return 400, {"ok": False, "code": "BAD_PROPS"}
+        # Positive allowlist: browser events must never log arbitrary user text.
+        allowed_props = {"path", "source", "reference", "kind", "language", "step", "choice", "template"}
+        safe = {}
+        for key, val in props.items():
+            if (key in allowed_props and isinstance(val, (str, int))
+                    and len(str(val)) <= 80
+                    and not EMAIL_RE.search(str(val))
+                    and not re.search(r"\\b\\+?\\d[\\d .()\\-]{8,}\\d\\b", str(val))):
+                safe[key] = val
         self.conn.execute(
             "INSERT INTO analytics_events (id, name, props, created_at) VALUES (?,?,?,?)",
-            (new_id("evt"), name, json.dumps(props)[:500], utcnow()),
+            (new_id("evt"), name, json.dumps(safe), utcnow()),
         )
         self.conn.commit()
         return 200, {"ok": True}
@@ -964,6 +999,13 @@ class Handler(BaseHTTPRequestHandler):
     limiter = RateLimiter(30, 60)
     admin_token = ""
 
+    def finish(self):
+        try:
+            super().finish()
+        finally:
+            if self.store is not None:
+                self.store.close_thread_connection()
+
     def log_message(self, fmt, *args):
         # Structured access log (JSON) for operators; never log bodies or tokens.
         try:
@@ -979,18 +1021,37 @@ class Handler(BaseHTTPRequestHandler):
             return
 
     def _client(self):
-        return (self.headers.get("X-Forwarded-For") or self.client_address[0]).split(",")[0].strip()
+        peer = self.client_address[0]
+        # Forwarded client IPs are usable only from operator-trusted proxies.
+        # Never accept a caller-supplied X-Forwarded-For from a direct request.
+        networks = (self.store.conf.get("AMANIKAH_TRUSTED_PROXY_CIDRS") or "").split(",")
+        try:
+            trusted = any(ipaddress.ip_address(peer) in ipaddress.ip_network(net.strip(), strict=False)
+                          for net in networks if net.strip())
+            if trusted:
+                forwarded = (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+                if forwarded:
+                    return str(ipaddress.ip_address(forwarded))
+        except ValueError:
+            pass
+        return peer
 
     def _json(self):
-        length = int(self.headers.get("Content-Length") or 0)
-        if length > 100000:
+        # Invalid/oversized bodies fail closed without throwing an uncaught
+        # exception or reading an unlimited socket stream.
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except (TypeError, ValueError, OverflowError):
+            return None
+        if length < 0 or length > 100000:
             return None
         raw = self.rfile.read(length) if length else b""
         if not raw:
             return {}
         try:
-            return json.loads(raw.decode("utf-8"))
-        except json.JSONDecodeError:
+            data = json.loads(raw.decode("utf-8"))
+            return data if isinstance(data, dict) else None
+        except (UnicodeDecodeError, ValueError):
             return None
 
     def _send(self, status, body, write_body=True):
@@ -1144,6 +1205,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(status, payload, write_body)
 
         if method == "POST" and path == "/api/amanikah/auth/register":
+            # UI-only disablement is insufficient: the API must also block
+            # unusable/unverified registrations during mail-free early access.
+            if not (store.mailer.configured or store.conf.get("AMANIKAH_ALLOW_OPERATOR_VERIFICATION") == "1"):
+                return self._send(503, {"ok": False, "code": "REGISTRATION_PAUSED",
+                                        "message": "New accounts are paused until secure verification is available."},
+                                  write_body)
             if not self.limiter.allow("reg:" + self._client()):
                 return self._send(429, {"ok": False, "code": "RATE_LIMITED"}, write_body)
             body = self._json()
