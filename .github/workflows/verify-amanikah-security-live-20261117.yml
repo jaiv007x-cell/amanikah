@@ -26,9 +26,11 @@ jobs:
           assert health.get('mailConfigured') is False,health
           print('PASS live API healthy, no matching, no enrollment email')
           PY
-          echo 'Public response header names and non-sensitive values:'
-          grep -Ei '^(HTTP/|content-type:|cache-control:|x-content-type-options:|referrer-policy:|x-frame-options:|server:)' /tmp/health-headers.txt || true
-          echo 'Running remaining checks independently of header findings'
+          grep -Eqi '^x-content-type-options: nosniff' /tmp/health-headers.txt
+          grep -Eqi '^cache-control: no-store' /tmp/health-headers.txt
+          grep -Eqi '^referrer-policy: (no-referrer|strict-origin-when-cross-origin)' /tmp/health-headers.txt
+          grep -Eqi '^x-frame-options: (DENY|SAMEORIGIN)' /tmp/health-headers.txt
+          echo 'PASS public reverse proxy emits no-store, nosniff, and safe baseline framing/referrer policies'
           for path in /api/amanikah/me/introductions /api/amanikah/me/family/brief /api/amanikah/me/voice /api/amanikah/ops/dashboard; do
             status=$(curl -sS --max-time 15 -o /dev/null -w '%{http_code}' "$BASE$path")
             [[ "$status" == 401 ]] || { echo "UNEXPECTED_PRIVATE_RESPONSE $path $status"; exit 1; }
