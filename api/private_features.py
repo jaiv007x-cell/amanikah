@@ -130,6 +130,9 @@ class PrivateFeatures:
         scopes = body.get("scopes")
         if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email) or not isinstance(scopes, list):
             return 400, fail("VALIDATION")
+        # Reject nested/unhashable objects before converting into a set.
+        if len(scopes) > len(SCOPES) or any(not isinstance(item, str) for item in scopes):
+            return 400, fail("BAD_SCOPE")
         scopes = sorted(set(scopes))
         if not scopes or set(scopes) - SCOPES:
             return 400, fail("BAD_SCOPE")
@@ -179,7 +182,9 @@ class PrivateFeatures:
 
     def respond(self, mid, body):
         ident = str(body.get("invitationId") or "")[:80]
-        accept = body.get("accept") is True
+        if not isinstance(body.get("accept"), bool):
+            return 400, fail("VALIDATION", "Please choose accept or decline.")
+        accept = body["accept"]
         with self.lock:
             row = self.store.conn.execute("SELECT id,owner_id FROM family_grants WHERE id=? AND invitee_id=? AND revoked_at IS NULL", (ident,mid)).fetchone()
             if not row: return 404, fail("NOT_FOUND")
@@ -187,6 +192,9 @@ class PrivateFeatures:
             self.store.conn.execute("UPDATE family_grants SET accepted_at=?,revoked_at=? WHERE id=?",
                                     (now() if accept else None,None if accept else now(),ident))
             self.store.conn.commit()
+        self.store.audit("family_invitation_response", actor=mid,
+                         entity_type="family_invitation", entity_id=ident,
+                         detail="accepted" if accept else "declined")
         return 200, {"ok":True,"accepted":accept}
 
     def revoke(self, mid, body):
@@ -194,6 +202,9 @@ class PrivateFeatures:
         with self.lock:
             cur=self.store.conn.execute("UPDATE family_grants SET revoked_at=? WHERE id=? AND owner_id=? AND revoked_at IS NULL",(now(),ident,mid))
             self.store.conn.commit()
+        if cur.rowcount:
+            self.store.audit("family_invitation_revoked", actor=mid,
+                             entity_type="family_invitation", entity_id=ident)
         return (200,{"ok":True,"revoked":True}) if cur.rowcount else (404,fail("NOT_FOUND"))
 
     def shared(self, mid, owner):
