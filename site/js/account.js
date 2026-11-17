@@ -14,6 +14,31 @@
     });
   }
 
+  function updateJourney() {
+    var fields = ["displayName", "city", "jurisdiction", "intentions"];
+    var labels = ["Display name", "City", "Country or region", "Your marriage intentions"];
+    var values = fields.map(function(id) { return document.getElementById(id).value.trim(); });
+    var completed = values.filter(Boolean).length;
+    document.getElementById("journeyCount").textContent =
+      completed + " of 4 profile details prepared";
+    var progress = document.getElementById("journeyProgress");
+    progress.setAttribute("aria-valuenow", String(completed));
+    document.getElementById("journeyFill").style.width = completed * 25 + "%";
+    var tasks = document.getElementById("journeyChecklist").children;
+    fields.forEach(function(_, index) {
+      tasks[index].textContent = (values[index] ? "✓ " : "○ ") + labels[index];
+    });
+    var preview = [];
+    if (values[0]) preview.push("My name: " + values[0]);
+    if (values[1] || values[2]) preview.push("From: " + [values[1],values[2]].filter(Boolean).join(", "));
+    if (values[3]) preview.push("What I hope for: " + values[3]);
+    document.getElementById("journeyPreview").textContent = preview.length ?
+      preview.join("\n") : "Start with a name and a few words about the home you hope to build. You decide what to share.";
+  }
+  ["displayName", "city", "jurisdiction", "intentions"].forEach(function(id) {
+    document.getElementById(id).addEventListener("input", updateJourney);
+  });
+
   function render(member) {
     status.textContent = "Signed in as " + member.email;
     panel.hidden = false;
@@ -33,6 +58,7 @@
     document.getElementById("city").value = p.city || "";
     document.getElementById("jurisdiction").value = p.jurisdiction || "";
     document.getElementById("intentions").value = p.intentions || "";
+    updateJourney();
   }
 
   requireSession().then(function (member) {
