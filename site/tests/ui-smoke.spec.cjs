@@ -335,3 +335,46 @@ test('signed-in account displays a private profile preview, not a compatibility 
   await expect(page.locator('#journeyPreview')).toContainText('A home filled with kindness.');
   await expect(page.locator('#journeyCard')).toContainText('not a compatibility score');
 });
+
+test('private member introduction controls only appear when matching is actually live', async ({page}) => {
+  await page.addInitScript(() => sessionStorage.setItem('amanikah.session','ci-session'));
+  await page.route('**/api/amanikah/me', async route => route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify({ok:true,member:{id:'mem_ci',
+      email:'ci@example.test',role:'member',emailVerified:true,profile:{
+      display_name:'Private Test',city:'',jurisdiction:'',intentions:''},consent:{withdrawn:false}}})}));
+  let enabled=false,responded=false;
+  await page.route('**/api/amanikah/me/introductions', async route => {
+    await route.fulfill({status:enabled?200:409,contentType:'application/json',
+      body:JSON.stringify(enabled?{ok:true,introductions:[{
+        id:'case_0123456789abcdef',reference:'IC-PRIVATE',status:'open',
+        myDecision:responded?'accepted':null
+      }]}:{ok:false,code:'MATCHMAKING_NOT_LIVE'})});
+  });
+  await page.route('**/api/amanikah/me/introductions/*/respond', async route => {
+    const data=route.request().postDataJSON();
+    expect(data.decision).toBe('accept');
+    responded=true;
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({ok:true,myDecision:'accepted',status:'open'})});
+  });
+  page.on('dialog', d=>d.accept());
+  await page.goto(base+'/account/');
+  await expect(page.locator('#memberIntroductions')).toBeHidden();
+  enabled=true;
+  await page.reload();
+  await expect(page.locator('#memberIntroductions')).toBeVisible();
+  await expect(page.locator('#memberIntroList')).not.toContainText('example.test');
+  await expect(page.locator('#memberIntroList')).not.toContainText('peerMemberId');
+  await page.getByRole('button',{name:'I am open to a conversation'}).click();
+  await expect(page.locator('#memberIntroList')).toContainText('Your choice: accepted');
+  await expect(page.locator('#memberIntroList button')).toHaveCount(0);
+});
+
+test('operator dashboard labels unconsented introductions as drafts', async ({page}) => {
+  await page.goto(base+'/ops/');
+  await expect(page.locator('#caseForm [name="memberId"]')).toHaveCount(1);
+  await expect(page.locator('#caseForm [name="peerMemberId"]')).toHaveCount(1);
+  await expect(page.locator('#caseForm')).toContainText('Create private draft');
+  await expect(page.locator('main')).toContainText('Drafts are not matches');
+});
