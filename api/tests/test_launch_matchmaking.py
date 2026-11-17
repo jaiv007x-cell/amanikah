@@ -19,6 +19,9 @@ class MatchConsent(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.conf = {
             "MATCHMAKING_LIVE": "1",
+            "AMANIKAH_SAFETY_REVIEW_APPROVED": "1",
+            "AMANIKAH_OFFSITE_RESTORE_VERIFIED": "1",
+            "AMANIKAH_REAL_ACCOUNT_QA_APPROVED": "1",
             "VOICE_PRIVATE_DIR": str(Path(self.tmp.name)/"voices"),
             "WAITLIST_MODE": "1",
         }
@@ -52,6 +55,14 @@ class MatchConsent(unittest.TestCase):
         self.assertEqual(status,201,body)
         self.assertEqual(body["case"]["status"],"draft")
         return body["case"]["id"]
+
+    def test_matching_flag_alone_cannot_make_service_live(self):
+        self.conf["AMANIKAH_OFFSITE_RESTORE_VERIFIED"]="0"
+        self.assertFalse(self.store.matchmaking_ready())
+        case=self._pair_case()
+        self.assertEqual(self.store.ops_set_case_status(case,"open")[1]["code"],"MATCHMAKING_NOT_LIVE")
+        self.assertEqual(self.store.list_member_introductions(self.a)[0],409)
+        self.conf["AMANIKAH_OFFSITE_RESTORE_VERIFIED"]="1"
 
     def test_two_adults_required_before_mutual(self):
         case_id=self._pair_case()
