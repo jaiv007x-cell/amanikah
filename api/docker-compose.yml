@@ -10,6 +10,7 @@ services:
     volumes:
       - /root/amanikah-api/server.py:/app/server.py:ro
       - /root/amanikah-api/private_features.py:/app/private_features.py:ro
+      - /root/amanikah-api/al_wali.py:/app/al_wali.py:ro
       - /var/www/amanikah:/srv/amanikah:ro
       - api_data:/data
     command: ["python", "-u", "/app/server.py"]
