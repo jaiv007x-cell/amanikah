@@ -128,6 +128,18 @@ class Integration(unittest.TestCase):
         # A decline never grants introductions while the live gate is off.
         self.assertEqual(self.request("GET","/members/"+second,token=token1)[0],403)
 
+    def test_logout_revokes_server_side_session(self):
+        _, token = self.registered("ci-logout@example.test")
+        self.assertEqual(self.request("GET","/me",token=token)[0],200)
+        code, result = self.request("POST","/auth/logout",{},token=token)
+        self.assertEqual(code,200,result)
+        self.assertTrue(result["signedOut"])
+        self.assertEqual(self.request("GET","/me",token=token)[0],401)
+        self.assertEqual(self.request("POST","/auth/logout",{},token=token)[0],200)
+
+    def test_verification_is_post_only(self):
+        self.assertEqual(self.request("GET","/auth/verify?token=bad")[0],404)
+
     def test_consent_withdrawal_revokes_sessions_and_blocks_login(self):
         mid, token = self.registered("ci-consent-revoke@example.test")
         self.assertEqual(self.request("GET","/me",token=token)[0],200)
