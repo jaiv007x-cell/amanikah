@@ -615,6 +615,11 @@ class Store:
         row = self.conn.execute("SELECT * FROM email_tokens WHERE token_hash = ? AND purpose = 'verify'", (th,)).fetchone()
         if not row or row["used_at"]:
             return 400, {"ok": False, "code": "INVALID_TOKEN"}
+        account = self.conn.execute(
+            "SELECT m.deleted_at,c.withdrawn FROM members m JOIN consents c ON c.member_id=m.id WHERE m.id=?",
+            (row["member_id"],)).fetchone()
+        if not account or account["deleted_at"] or account["withdrawn"]:
+            return 400, {"ok": False, "code": "INVALID_TOKEN"}
         if datetime.fromisoformat(row["expires_at"]).replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
             return 400, {"ok": False, "code": "EXPIRED_TOKEN"}
         self.conn.execute("UPDATE members SET email_verified = 1, updated_at = ? WHERE id = ?", (utcnow(), row["member_id"]))
@@ -1195,6 +1200,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         if write_body:
@@ -1205,6 +1213,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         if write_body:
@@ -1370,10 +1381,8 @@ class Handler(BaseHTTPRequestHandler):
             status, payload = store.verify_email(str(token or ""))
             return self._send(status, payload, write_body)
 
-        if method == "GET" and path == "/api/amanikah/auth/verify":
-            token = (qs.get("token") or [None])[0]
-            status, payload = store.verify_email(str(token or ""))
-            return self._send(status, payload, write_body)
+        # Verification is POST-only: URL prefetchers and link crawlers must
+        # never consume an email-verification token with a GET.
 
         if method == "GET" and path == "/api/amanikah/me/introductions":
             member = store.session_member(self._bearer())
