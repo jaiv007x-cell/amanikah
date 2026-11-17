@@ -23,6 +23,8 @@ jobs:
         run: |
           node --check site/js/account-family-studio.js
           node --check site/js/interactive-film.js
+          node --check site/js/al-wali.js
+          node --check site/js/account.js
           node --check site/js/simple-nikah.js
           node --check site/js/nikah-readiness.js
           node --check site/js/ops/console.js
