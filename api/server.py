@@ -65,15 +65,27 @@ def fingerprint(parts) -> str:
 
 
 class RateLimiter:
-    def __init__(self, limit=20, window=60):
+    def __init__(self, limit=20, window=60, max_clients=50000):
         self.limit = limit
         self.window = window
+        self.max_clients = max_clients
         self.hits = defaultdict(deque)
         self.lock = threading.Lock()
+        self.calls = 0
 
     def allow(self, key: str) -> bool:
         now = time.time()
         with self.lock:
+            # Reclaim stale buckets to prevent long-lived API processes from
+            # retaining an unbounded set of client IP addresses.
+            self.calls += 1
+            if self.calls % 256 == 0:
+                expired = [client for client, values in self.hits.items()
+                           if not values or now - values[-1] > self.window]
+                for client in expired:
+                    self.hits.pop(client, None)
+            if key not in self.hits and len(self.hits) >= self.max_clients:
+                return False
             bucket = self.hits[key]
             while bucket and now - bucket[0] > self.window:
                 bucket.popleft()
