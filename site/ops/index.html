@@ -57,12 +57,15 @@
       <div id="tickets"></div>
     </section>
     <section class="panel">
-      <h2>Introduction cases</h2>
+      <h2>Introduction cases — consent controlled</h2>
+      <p class="muted">Drafts are not matches. To open a real invitation later, both people must be eligible verified adults and matchmaking must be explicitly enabled. Only two recorded acceptances allow the “mutual” status. Do not disclose profile or contact details merely because a draft exists.</p>
       <form id="caseForm" class="row" style="gap:8px;margin-bottom:12px">
-        <input name="leadId" placeholder="Lead id (optional)">
-        <input name="peerLabel" placeholder="Peer label" required>
-        <input name="notes" placeholder="Notes">
-        <button class="btn btn-emerald" type="submit">Open case</button>
+        <input name="leadId" placeholder="Lead id (optional)" aria-label="Lead id">
+        <input name="memberId" placeholder="First verified member id" aria-label="First verified member id">
+        <input name="peerMemberId" placeholder="Second verified member id" aria-label="Second verified member id">
+        <input name="peerLabel" placeholder="Private operator label" aria-label="Private operator label" required>
+        <input name="notes" placeholder="Internal notes, no private documents" aria-label="Internal notes">
+        <button class="btn btn-emerald" type="submit">Create private draft</button>
       </form>
       <div id="cases"></div>
     </section>

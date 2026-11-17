@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
 <title>Verify email — Amanikah</title>
 <link rel="stylesheet" href="/css/site.css">
 </head>
@@ -16,7 +17,9 @@
 <script src="/js/platform.js"></script>
 <script>
 (function () {
-  var token = AmanikahPlatform.qs("token");
+  var token = new URLSearchParams(location.hash.slice(1)).get("token") || AmanikahPlatform.qs("token");
+  // Remove the one-use secret from browser history and from links/referrers.
+  if (token) history.replaceState(null, "", location.pathname);
   var status = document.getElementById("status");
   if (!token) {
     status.textContent = "Missing token.";

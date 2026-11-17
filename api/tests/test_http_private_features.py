@@ -30,11 +30,13 @@ class Integration(unittest.TestCase):
         cls.env = dict(os.environ,
             BIND="127.0.0.1", PORT=str(cls.port),
             OPS_ADMIN_TOKEN=cls.admin,
-            SESSION_PEPPER="ci-pepper-not-for-production",
+            SESSION_PEPPER="ci-only-pepper-ci-only-pepper-ci-only-pepper-ci-only-pepper-",
             AMANIKAH_DB=str(Path(cls.tmp.name)/"test.sqlite"),
             VOICE_PRIVATE_DIR=str(Path(cls.tmp.name)/"private"),
             PUBLIC_BASE_URL=cls.base,
             AMANIKAH_AI_ENABLED="0",
+            AMANIKAH_ALLOW_OPERATOR_VERIFICATION="1",
+            MATCHMAKING_LIVE="0",
             OPERATOR_EMAIL="")
         cls.env.pop("GROQ_API_KEY", None)
         cls.env["AMANIKAH_WALI_AI_ENABLED"] = "0"
@@ -90,12 +92,61 @@ class Integration(unittest.TestCase):
         code,verify=cls.request("POST","/ops/members/"+mid+"/verify-link",data={},admin=True)
         assert code==200,(code,verify)
         from urllib.parse import urlparse,parse_qs
-        token=parse_qs(urlparse(verify["verifyUrl"]).query)["token"][0]
+        token=parse_qs(urlparse(verify["verifyUrl"]).fragment)["token"][0]
         code,checked=cls.request("POST","/auth/verify",data={"token":token})
         assert code==200,(code,checked)
         code,logged=cls.request("POST","/auth/login",data={"email":email,"password":"secure-test-password-1"})
         assert code==200,(code,logged)
         return mid,logged["token"]
+
+    def test_invalid_json_and_oversized_headers_fail_cleanly(self):
+        for raw in (b'[]', b'{"bad":', b'null', b'"hello"', b'\\xff'):
+            status, body = self.request("POST","/leads",data=raw,binary=True)
+            self.assertEqual(status,400,body)
+            self.assertEqual(body["code"],"BAD_JSON")
+        status, _ = self.request("POST","/leads",data=b"x"*100002,binary=True)
+        self.assertEqual(status,400)
+
+    def test_prelaunch_intro_cannot_be_manually_set_mutual(self):
+        first, token1 = self.registered("ci-intro-a@example.test")
+        second, token2 = self.registered("ci-intro-b@example.test")
+        code, response = self.request("POST", "/ops/cases",
+            {"memberId": first, "peerMemberId": second, "peerLabel":"Internal draft"},
+            admin=True)
+        self.assertEqual(code,201,response)
+        cid=response["case"]["id"]
+        self.assertEqual(response["case"]["status"],"draft")
+        for attempted in ("open","mutual"):
+            code, result=self.request("PATCH", "/ops/cases/"+cid,
+                {"status":attempted},admin=True)
+            self.assertEqual(code,409,result)
+            self.assertEqual(result["code"],"MATCHMAKING_NOT_LIVE")
+        self.assertEqual(self.request("GET","/me/introductions",token=token1)[0],409)
+        self.assertEqual(self.request("GET","/me/introductions")[0],401)
+        self.assertEqual(self.request("POST","/me/introductions/"+cid+"/respond",
+            {"decision":"accept"},token=token1)[0],409)
+        # A decline never grants introductions while the live gate is off.
+        self.assertEqual(self.request("GET","/members/"+second,token=token1)[0],403)
+
+    def test_logout_revokes_server_side_session(self):
+        _, token = self.registered("ci-logout@example.test")
+        self.assertEqual(self.request("GET","/me",token=token)[0],200)
+        code, result = self.request("POST","/auth/logout",{},token=token)
+        self.assertEqual(code,200,result)
+        self.assertTrue(result["signedOut"])
+        self.assertEqual(self.request("GET","/me",token=token)[0],401)
+        self.assertEqual(self.request("POST","/auth/logout",{},token=token)[0],200)
+
+    def test_verification_is_post_only(self):
+        self.assertEqual(self.request("GET","/auth/verify?token=bad")[0],404)
+
+    def test_consent_withdrawal_revokes_sessions_and_blocks_login(self):
+        mid, token = self.registered("ci-consent-revoke@example.test")
+        self.assertEqual(self.request("GET","/me",token=token)[0],200)
+        self.assertEqual(self.request("POST","/me/withdraw-consent",{},token=token)[0],200)
+        self.assertEqual(self.request("GET","/me",token=token)[0],401)
+        self.assertEqual(self.request("POST","/auth/login",{
+            "email":"ci-consent-revoke@example.test","password":"secure-test-password-1"})[0],403)
 
     def test_public_al_wali_guidance_is_available_without_groq_key(self):
         status, body = self.request("GET", "/al-wali/status")

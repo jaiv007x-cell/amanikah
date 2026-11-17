@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import hmac
 import json
 import os
@@ -64,15 +65,27 @@ def fingerprint(parts) -> str:
 
 
 class RateLimiter:
-    def __init__(self, limit=20, window=60):
+    def __init__(self, limit=20, window=60, max_clients=50000):
         self.limit = limit
         self.window = window
+        self.max_clients = max_clients
         self.hits = defaultdict(deque)
         self.lock = threading.Lock()
+        self.calls = 0
 
     def allow(self, key: str) -> bool:
         now = time.time()
         with self.lock:
+            # Reclaim stale buckets to prevent long-lived API processes from
+            # retaining an unbounded set of client IP addresses.
+            self.calls += 1
+            if self.calls % 256 == 0:
+                expired = [client for client, values in self.hits.items()
+                           if not values or now - values[-1] > self.window]
+                for client in expired:
+                    self.hits.pop(client, None)
+            if key not in self.hits and len(self.hits) >= self.max_clients:
+                return False
             bucket = self.hits[key]
             while bucket and now - bucket[0] > self.window:
                 bucket.popleft()
@@ -153,14 +166,39 @@ class Store:
         self.pepper = pepper
         self.mailer = mailer
         self.conf = conf
-        self.conn = sqlite3.connect(db_path, check_same_thread=False)
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA journal_mode=WAL")
-        self.conn.execute("PRAGMA foreign_keys=ON")
-        self.lock = threading.Lock()
+        # A ThreadingHTTPServer must never share a transaction across requests.
+        # SQLite connections are thread-local; WAL permits concurrent readers.
+        self.db_path = db_path
+        self._thread = threading.local()
+        self.lock = threading.RLock()
         self._migrate()
 
+    @property
+    def conn(self):
+        conn = getattr(self._thread, "conn", None)
+        if conn is None:
+            conn = sqlite3.connect(self.db_path, timeout=15)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys=ON")
+            conn.execute("PRAGMA busy_timeout=15000")
+            self._thread.conn = conn
+        return conn
+
+    def matchmaking_ready(self):
+        # A single environment toggle is not enough to make real people visible.
+        # These flags are operator attestations, not substitutes for evidence.
+        gates = ("MATCHMAKING_LIVE", "AMANIKAH_SAFETY_REVIEW_APPROVED",
+                 "AMANIKAH_OFFSITE_RESTORE_VERIFIED", "AMANIKAH_REAL_ACCOUNT_QA_APPROVED")
+        return all(self.conf.get(name) == "1" for name in gates)
+
+    def close_thread_connection(self):
+        conn = getattr(self._thread, "conn", None)
+        if conn is not None:
+            conn.close()
+            del self._thread.conn
+
     def _migrate(self):
+        self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS leads (
@@ -249,6 +287,15 @@ class Store:
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS introduction_consents (
+              case_id TEXT NOT NULL,
+              member_id TEXT NOT NULL,
+              decision TEXT NOT NULL CHECK(decision IN ('accepted','declined')),
+              created_at TEXT NOT NULL,
+              PRIMARY KEY(case_id, member_id),
+              FOREIGN KEY(case_id) REFERENCES introduction_cases(id),
+              FOREIGN KEY(member_id) REFERENCES members(id)
+            );
             CREATE TABLE IF NOT EXISTS verification_requests (
               id TEXT PRIMARY KEY,
               reference TEXT UNIQUE NOT NULL,
@@ -312,6 +359,10 @@ class Store:
             CREATE INDEX IF NOT EXISTS idx_shares_kind ON shares(kind);
             """
         )
+        # Additive migration for older production databases (no data loss).
+        columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(introduction_cases)")}
+        if "peer_member_id" not in columns:
+            self.conn.execute("ALTER TABLE introduction_cases ADD COLUMN peer_member_id TEXT")
         self.conn.commit()
 
     def audit(self, action, actor=None, entity_type=None, entity_id=None, detail=None):
@@ -424,7 +475,7 @@ class Store:
             "reference": reference,
             "status": "new",
             "mode": mode,
-            "matchmakingLive": self.conf.get("MATCHMAKING_LIVE") == "1",
+            "matchmakingLive": self.matchmaking_ready(),
             "message": "Your waitlist request was accepted. Matchmaking is not operational yet; an operator will review this request.",
             "notification": notify,
         }
@@ -529,7 +580,7 @@ class Store:
         )
         self.conn.commit()
         self.audit("member_registered", actor=email, entity_type="member", entity_id=mid)
-        verify_url = f"{self.conf.get('PUBLIC_BASE_URL')}/account/verify.html?token={token}"
+        verify_url = f"{self.conf.get('PUBLIC_BASE_URL')}/account/verify.html#token={token}"
         # Attempt member-facing verification email when mail works
         member_mail = {"sent": False, "ok": False}
         if self.mailer.configured:
@@ -574,7 +625,7 @@ class Store:
             (hashlib.sha256(token.encode()).hexdigest(), member_id, "verify", (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()),
         )
         self.conn.commit()
-        verify_url = f"{self.conf.get('PUBLIC_BASE_URL')}/account/verify.html?token={token}"
+        verify_url = f"{self.conf.get('PUBLIC_BASE_URL')}/account/verify.html#token={token}"
         self.audit("verify_link_issued", actor="ops", entity_type="member", entity_id=member_id)
         return 200, {"ok": True, "memberId": member_id, "verifyUrl": verify_url}
 
@@ -582,6 +633,11 @@ class Store:
         th = hashlib.sha256(token.encode()).hexdigest()
         row = self.conn.execute("SELECT * FROM email_tokens WHERE token_hash = ? AND purpose = 'verify'", (th,)).fetchone()
         if not row or row["used_at"]:
+            return 400, {"ok": False, "code": "INVALID_TOKEN"}
+        account = self.conn.execute(
+            "SELECT m.deleted_at,c.withdrawn FROM members m JOIN consents c ON c.member_id=m.id WHERE m.id=?",
+            (row["member_id"],)).fetchone()
+        if not account or account["deleted_at"] or account["withdrawn"]:
             return 400, {"ok": False, "code": "INVALID_TOKEN"}
         if datetime.fromisoformat(row["expires_at"]).replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
             return 400, {"ok": False, "code": "EXPIRED_TOKEN"}
@@ -601,6 +657,9 @@ class Store:
             return 401, {"ok": False, "code": "INVALID_CREDENTIALS"}
         if not row["email_verified"]:
             return 403, {"ok": False, "code": "EMAIL_UNVERIFIED", "message": "Verify your email before signing in."}
+        consent = self.conn.execute("SELECT withdrawn FROM consents WHERE member_id=?", (row["id"],)).fetchone()
+        if not consent or consent["withdrawn"]:
+            return 403, {"ok": False, "code": "CONSENT_WITHDRAWN"}
         token = secrets.token_urlsafe(32)
         self.conn.execute(
             "INSERT INTO sessions (token_hash, member_id, expires_at, created_at) VALUES (?,?,?,?)",
@@ -613,6 +672,13 @@ class Store:
         )
         self.conn.commit()
         return 200, {"ok": True, "token": token, "member": self.public_member(row["id"])}
+
+    def logout(self, token: str):
+        if token:
+            self.conn.execute("DELETE FROM sessions WHERE token_hash=?",
+                              (hashlib.sha256(token.encode()).hexdigest(),))
+            self.conn.commit()
+        return 200, {"ok": True, "signedOut": True}
 
     def session_member(self, token: str):
         if not token:
@@ -627,7 +693,10 @@ class Store:
         sess = self.conn.execute("SELECT expires_at FROM sessions WHERE token_hash = ?", (th,)).fetchone()
         if datetime.fromisoformat(sess["expires_at"]).replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
             return None
-        if row["is_demo"]:
+        if row["is_demo"] or not row["email_verified"]:
+            return None
+        consent = self.conn.execute("SELECT withdrawn FROM consents WHERE member_id=?", (row["id"],)).fetchone()
+        if not consent or consent["withdrawn"]:
             return None
         return row
 
@@ -670,8 +739,11 @@ class Store:
     def withdraw_consent(self, member_id):
         if hasattr(self, "private_features"):
             self.private_features.purge_member(member_id)
+        self._pause_member_introductions(member_id)
         self.conn.execute("UPDATE consents SET withdrawn=1, updated_at=? WHERE member_id=?", (utcnow(), member_id))
         self.conn.execute("UPDATE profiles SET visibility='private' WHERE member_id=?", (member_id,))
+        # Withdrawing consent also immediately invalidates all active sessions.
+        self.conn.execute("DELETE FROM sessions WHERE member_id=?", (member_id,))
         self.conn.commit()
         self.audit("consent_withdrawn", actor=member_id, entity_type="member", entity_id=member_id)
         return 200, {"ok": True, "withdrawn": True}
@@ -679,6 +751,7 @@ class Store:
     def delete_account(self, member_id):
         if hasattr(self, "private_features"):
             self.private_features.purge_member(member_id)
+        self._pause_member_introductions(member_id)
         now = utcnow()
         self.conn.execute("UPDATE members SET deleted_at=?, email=?, password_hash='', updated_at=? WHERE id=?", (now, f"deleted-{member_id}@amanikah.invalid", now, member_id))
         self.conn.execute("UPDATE profiles SET display_name='Deleted member', intentions='', city='', visibility='private' WHERE member_id=?", (member_id,))
@@ -775,12 +848,20 @@ class Store:
         if name not in allowed:
             return 400, {"ok": False, "code": "UNKNOWN_EVENT"}
         props = body.get("props") or {}
-        # Strip matrimonial private content
-        for banned in ("note", "intentions", "message", "password", "profile", "phone"):
-            props.pop(banned, None)
+        if not isinstance(props, dict):
+            return 400, {"ok": False, "code": "BAD_PROPS"}
+        # Positive allowlist: browser events must never log arbitrary user text.
+        allowed_props = {"path", "source", "reference", "kind", "language", "step", "choice", "template"}
+        safe = {}
+        for key, val in props.items():
+            if (key in allowed_props and isinstance(val, (str, int))
+                    and len(str(val)) <= 80
+                    and not EMAIL_RE.search(str(val))
+                    and not re.search(r"\+?\d[\d .()\-]{8,}\d", str(val))):
+                safe[key] = val
         self.conn.execute(
             "INSERT INTO analytics_events (id, name, props, created_at) VALUES (?,?,?,?)",
-            (new_id("evt"), name, json.dumps(props)[:500], utcnow()),
+            (new_id("evt"), name, json.dumps(safe), utcnow()),
         )
         self.conn.commit()
         return 200, {"ok": True}
@@ -825,23 +906,144 @@ class Store:
         self.audit("ticket_status", actor="operator", entity_type="ticket", entity_id=ticket_id, detail=status)
         return 200, {"ok": True, "id": ticket_id, "status": status}
 
+    def _eligible_intro_member(self, member_id):
+        if not member_id or not isinstance(member_id, str):
+            return False
+        row = self.conn.execute("""
+            SELECT 1 FROM members m JOIN consents c ON c.member_id=m.id
+            JOIN profiles p ON p.member_id=m.id
+            WHERE m.id=? AND m.deleted_at IS NULL AND m.email_verified=1
+            AND m.is_demo=0 AND c.terms=1 AND c.privacy=1 AND c.withdrawn=0
+            AND p.age>=21
+            """, (member_id,)).fetchone()
+        return bool(row)
+
+    def _pause_member_introductions(self, member_id):
+        # This is called before account/consent deletion. Stop invitations
+        # immediately; never reuse a previously accepted response.
+        self.conn.execute("""
+            UPDATE introduction_cases SET status='paused', updated_at=?
+            WHERE status IN ('open','mutual','draft')
+              AND (member_id=? OR peer_member_id=?)""",
+            (utcnow(), member_id, member_id))
+        self.conn.execute("""
+            DELETE FROM introduction_consents WHERE member_id=?
+            OR case_id IN (SELECT id FROM introduction_cases
+                           WHERE member_id=? OR peer_member_id=?)
+            """, (member_id, member_id, member_id))
+
     def ops_create_case(self, body):
-        cid = new_id("case")
-        reference = "IC-" + secrets.token_hex(3).upper()
-        now = utcnow()
-        self.conn.execute(
-            "INSERT INTO introduction_cases (id, reference, lead_id, member_id, peer_label, status, notes, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
-            (cid, reference, body.get("leadId"), body.get("memberId"), str(body.get("peerLabel") or "")[:80], "open", str(body.get("notes") or "")[:1000], now, now),
-        )
-        self.conn.commit()
-        return 201, {"ok": True, "case": {"id": cid, "reference": reference, "status": "open"}}
+        if not isinstance(body, dict):
+            return 400, {"ok": False, "code": "BAD_REQUEST"}
+        first = body.get("memberId")
+        second = body.get("peerMemberId")
+        if bool(first) != bool(second):
+            return 400, {"ok": False, "code": "BOTH_ADULTS_REQUIRED"}
+        if first:
+            if first == second or not all(self._eligible_intro_member(mid) for mid in (first, second)):
+                return 403, {"ok": False, "code": "ELIGIBLE_ADULTS_REQUIRED"}
+            if (hasattr(self,"private_features") and self.private_features.is_blocked(first, second)):
+                return 403, {"ok": False, "code": "BLOCKED"}
+        # An operator-created record is only a draft; never implied consent.
+        with self.lock:
+            cid = new_id("case")
+            reference = "IC-" + secrets.token_hex(3).upper()
+            now = utcnow()
+            self.conn.execute("""
+                INSERT INTO introduction_cases
+                (id,reference,lead_id,member_id,peer_member_id,peer_label,status,notes,created_at,updated_at)
+                VALUES(?,?,?,?,?,?,'draft',?,?,?)""",
+                (cid, reference, body.get("leadId"), first, second,
+                 str(body.get("peerLabel") or "")[:80],
+                 str(body.get("notes") or "")[:1000], now, now))
+            self.conn.commit()
+        self.audit("introduction_draft_created", actor="operator", entity_type="introduction", entity_id=cid)
+        return 201, {"ok": True, "case": {"id": cid, "reference": reference, "status": "draft"}}
+
+    def _intro_pair(self, row):
+        return row and row["member_id"] and row["peer_member_id"] and (
+            row["member_id"] != row["peer_member_id"]) and all(
+            self._eligible_intro_member(x) for x in (row["member_id"],row["peer_member_id"])) and (
+            not hasattr(self,"private_features") or
+            not self.private_features.is_blocked(row["member_id"],row["peer_member_id"]))
 
     def ops_set_case_status(self, case_id, status):
         if status not in CASE_STATUSES:
             return 400, {"ok": False, "code": "INVALID_STATUS"}
-        self.conn.execute("UPDATE introduction_cases SET status=?, updated_at=? WHERE id=?", (status, utcnow(), case_id))
-        self.conn.commit()
+        with self.lock:
+            row = self.conn.execute("SELECT * FROM introduction_cases WHERE id=?", (case_id,)).fetchone()
+            if not row:
+                return 404, {"ok": False, "code": "NOT_FOUND"}
+            old = row["status"]
+            if status in ("open", "mutual"):
+                if not self.matchmaking_ready():
+                    return 409, {"ok": False, "code": "MATCHMAKING_NOT_LIVE"}
+                if not self._intro_pair(row):
+                    return 403, {"ok": False, "code": "TWO_VERIFIED_ADULTS_REQUIRED"}
+            if status == "open" and old not in ("draft", "open"):
+                return 409, {"ok": False, "code": "INVALID_TRANSITION"}
+            if status == "mutual":
+                if old not in ("open", "mutual"):
+                    return 409, {"ok": False, "code": "INVALID_TRANSITION"}
+                decisions = self.conn.execute("""
+                    SELECT member_id FROM introduction_consents
+                    WHERE case_id=? AND decision='accepted' """, (case_id,)).fetchall()
+                if {r["member_id"] for r in decisions} != {row["member_id"], row["peer_member_id"]}:
+                    return 409, {"ok": False, "code": "BOTH_ADULTS_MUST_ACCEPT"}
+            if status == "draft" and old != "draft":
+                return 409, {"ok": False, "code": "INVALID_TRANSITION"}
+            if old in ("closed", "paused") and status not in ("closed", "paused"):
+                return 409, {"ok": False, "code": "NEW_INTRODUCTION_REQUIRED"}
+            self.conn.execute("UPDATE introduction_cases SET status=?, updated_at=? WHERE id=?",
+                              (status, utcnow(), case_id))
+            self.conn.commit()
+        self.audit("introduction_status", actor="operator", entity_type="introduction", entity_id=case_id, detail=status)
         return 200, {"ok": True, "id": case_id, "status": status}
+
+    def list_member_introductions(self, member_id):
+        if not self.matchmaking_ready():
+            return 409, {"ok": False, "code": "MATCHMAKING_NOT_LIVE"}
+        if not self._eligible_intro_member(member_id):
+            return 403, {"ok": False, "code": "INELIGIBLE"}
+        rows = self.conn.execute("""
+            SELECT i.id,i.reference,i.status,i.created_at,c.decision
+            FROM introduction_cases i LEFT JOIN introduction_consents c
+            ON c.case_id=i.id AND c.member_id=?
+            WHERE (i.member_id=? OR i.peer_member_id=?)
+            AND i.status IN ('open','mutual')
+            ORDER BY i.created_at DESC LIMIT 30""",
+            (member_id, member_id, member_id)).fetchall()
+        # Neither peer identity, profile, location, nor operator notes is
+        # exposed before a separately reviewed release of an introduction.
+        return 200, {"ok": True, "introductions": [{
+            "id":row["id"],"reference":row["reference"],"status":row["status"],
+            "myDecision":row["decision"],"createdAt":row["created_at"]
+        } for row in rows]}
+
+    def respond_member_introduction(self, member_id, case_id, body):
+        if not self.matchmaking_ready():
+            return 409, {"ok": False, "code": "MATCHMAKING_NOT_LIVE"}
+        if not isinstance(body, dict) or body.get("decision") not in ("accept", "decline"):
+            return 400, {"ok": False, "code": "VALIDATION"}
+        with self.lock:
+            row = self.conn.execute("SELECT * FROM introduction_cases WHERE id=?", (case_id,)).fetchone()
+            if not row or member_id not in (row["member_id"],row["peer_member_id"]):
+                return 404, {"ok": False, "code": "NOT_FOUND"}
+            if row["status"] not in ("open", "mutual") or not self._intro_pair(row):
+                return 409, {"ok": False, "code": "INTRODUCTION_UNAVAILABLE"}
+            decision = "accepted" if body["decision"] == "accept" else "declined"
+            self.conn.execute("""
+                INSERT INTO introduction_consents(case_id,member_id,decision,created_at)
+                VALUES(?,?,?,?)
+                ON CONFLICT(case_id,member_id) DO UPDATE SET
+                  decision=excluded.decision, created_at=excluded.created_at
+                """, (case_id,member_id,decision,utcnow()))
+            if decision == "declined":
+                self.conn.execute("UPDATE introduction_cases SET status='paused',updated_at=? WHERE id=?",
+                                  (utcnow(),case_id))
+            self.conn.commit()
+        self.audit("introduction_response", actor=member_id, entity_type="introduction",entity_id=case_id, detail=decision)
+        return 200, {"ok": True, "myDecision": decision, "status": "paused" if decision=="declined" else row["status"]}
 
     def ops_create_verification(self, body):
         vid = new_id("ver")
@@ -897,7 +1099,7 @@ class Store:
         by_status = {s: count("SELECT COUNT(*) FROM leads WHERE status=? AND deleted_at IS NULL", s) for s in LEAD_STATUSES}
         return {
             "mode": "waitlist" if self.conf.get("WAITLIST_MODE", "1") == "1" else "live",
-            "matchmakingLive": self.conf.get("MATCHMAKING_LIVE") == "1",
+            "matchmakingLive": self.matchmaking_ready(),
             "mailConfigured": self.mailer.configured,
             "operatorEmailConfigured": bool(self.conf.get("OPERATOR_EMAIL")),
             "leads": by_status,
@@ -962,7 +1164,16 @@ class Handler(BaseHTTPRequestHandler):
     wali_ai_limiter = RateLimiter(8, 300)
     wali_global_limiter = RateLimiter(100, 60)
     limiter = RateLimiter(30, 60)
+    analytics_limiter = RateLimiter(120, 60)
+    analytics_global_limiter = RateLimiter(3000, 60)
     admin_token = ""
+
+    def finish(self):
+        try:
+            super().finish()
+        finally:
+            if self.store is not None:
+                self.store.close_thread_connection()
 
     def log_message(self, fmt, *args):
         # Structured access log (JSON) for operators; never log bodies or tokens.
@@ -979,18 +1190,37 @@ class Handler(BaseHTTPRequestHandler):
             return
 
     def _client(self):
-        return (self.headers.get("X-Forwarded-For") or self.client_address[0]).split(",")[0].strip()
+        peer = self.client_address[0]
+        # Forwarded client IPs are usable only from operator-trusted proxies.
+        # Never accept a caller-supplied X-Forwarded-For from a direct request.
+        networks = (self.store.conf.get("AMANIKAH_TRUSTED_PROXY_CIDRS") or "").split(",")
+        try:
+            trusted = any(ipaddress.ip_address(peer) in ipaddress.ip_network(net.strip(), strict=False)
+                          for net in networks if net.strip())
+            if trusted:
+                forwarded = (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+                if forwarded:
+                    return str(ipaddress.ip_address(forwarded))
+        except ValueError:
+            pass
+        return peer
 
     def _json(self):
-        length = int(self.headers.get("Content-Length") or 0)
-        if length > 100000:
+        # Invalid/oversized bodies fail closed without throwing an uncaught
+        # exception or reading an unlimited socket stream.
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except (TypeError, ValueError, OverflowError):
+            return None
+        if length < 0 or length > 100000:
             return None
         raw = self.rfile.read(length) if length else b""
         if not raw:
             return {}
         try:
-            return json.loads(raw.decode("utf-8"))
-        except json.JSONDecodeError:
+            data = json.loads(raw.decode("utf-8"))
+            return data if isinstance(data, dict) else None
+        except (UnicodeDecodeError, ValueError):
             return None
 
     def _send(self, status, body, write_body=True):
@@ -998,6 +1228,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         if write_body:
@@ -1008,6 +1241,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         if write_body:
@@ -1111,7 +1347,7 @@ class Handler(BaseHTTPRequestHandler):
                 "ok": True,
                 "service": "amanikah-api",
                 "waitlistMode": store.conf.get("WAITLIST_MODE", "1") == "1",
-                "matchmakingLive": store.conf.get("MATCHMAKING_LIVE") == "1",
+                "matchmakingLive": store.matchmaking_ready(),
                 "mailConfigured": store.mailer.configured,
             }, write_body)
 
@@ -1144,6 +1380,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(status, payload, write_body)
 
         if method == "POST" and path == "/api/amanikah/auth/register":
+            # UI-only disablement is insufficient: the API must also block
+            # unusable/unverified registrations during mail-free early access.
+            test_only = (store.conf.get("AMANIKAH_ALLOW_OPERATOR_VERIFICATION") == "1"
+                         and self.server.server_address[0] in ("127.0.0.1", "::1"))
+            if not (store.mailer.configured or test_only):
+                return self._send(503, {"ok": False, "code": "REGISTRATION_PAUSED",
+                                        "message": "New accounts are paused until secure verification is available."},
+                                  write_body)
             if not self.limiter.allow("reg:" + self._client()):
                 return self._send(429, {"ok": False, "code": "RATE_LIMITED"}, write_body)
             body = self._json()
@@ -1151,6 +1395,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(400, {"ok": False, "code": "BAD_JSON"}, write_body)
             status, payload = store.register_member(body)
             return self._send(status, payload, write_body)
+
+        if method == "POST" and path == "/api/amanikah/auth/logout":
+            return self._send(*store.logout(self._bearer()), write_body)
 
         if method == "POST" and path == "/api/amanikah/auth/login":
             if not self.limiter.allow("login:" + self._client()):
@@ -1162,15 +1409,31 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(status, payload, write_body)
 
         if method == "POST" and path == "/api/amanikah/auth/verify":
+            if not self.limiter.allow("verification:" + self._client()):
+                return self._send(429, {"ok":False,"code":"RATE_LIMITED"}, write_body)
             body = self._json() or {}
             token = body.get("token") or (qs.get("token") or [None])[0]
             status, payload = store.verify_email(str(token or ""))
             return self._send(status, payload, write_body)
 
-        if method == "GET" and path == "/api/amanikah/auth/verify":
-            token = (qs.get("token") or [None])[0]
-            status, payload = store.verify_email(str(token or ""))
-            return self._send(status, payload, write_body)
+        # Verification is POST-only: URL prefetchers and link crawlers must
+        # never consume an email-verification token with a GET.
+
+        if method == "GET" and path == "/api/amanikah/me/introductions":
+            member = store.session_member(self._bearer())
+            if not member:
+                return self._send(401, {"ok":False,"code":"UNAUTHENTICATED"}, write_body)
+            return self._send(*store.list_member_introductions(member["id"]), write_body)
+
+        if method == "POST" and path.startswith("/api/amanikah/me/introductions/") and path.endswith("/respond"):
+            member = store.session_member(self._bearer())
+            if not member:
+                return self._send(401, {"ok":False,"code":"UNAUTHENTICATED"}, write_body)
+            case_id = path[len("/api/amanikah/me/introductions/"):-len("/respond")].strip("/")
+            if not re.fullmatch(r"case_[a-f0-9]{16}", case_id):
+                return self._send(404, {"ok":False,"code":"NOT_FOUND"}, write_body)
+            return self._send(*store.respond_member_introduction(
+                member["id"],case_id,self._json()), write_body)
 
         if method == "GET" and path == "/api/amanikah/me":
             member = store.session_member(self._bearer())
@@ -1209,6 +1472,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(status, payload, write_body)
 
         if method == "POST" and path == "/api/amanikah/analytics/events":
+            if not (self.analytics_limiter.allow("analytics:" + self._client())
+                    and self.analytics_global_limiter.allow("all")):
+                return self._send(429, {"ok":False,"code":"RATE_LIMITED"}, write_body)
             body = self._json()
             if body is None:
                 return self._send(400, {"ok": False, "code": "BAD_JSON"}, write_body)
@@ -1230,6 +1496,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(status, payload, write_body)
 
         if method == "POST" and path.startswith("/api/amanikah/shares/") and path.endswith("/revoke"):
+            if not self.limiter.allow("share-revoke:" + self._client()):
+                return self._send(429, {"ok":False,"code":"RATE_LIMITED"}, write_body)
             share_id = path.rstrip("/").split("/")[-2]
             body = self._json() or {}
             status, payload = store.revoke_share(share_id, body.get("revokeToken") or body.get("token") or "")
@@ -1328,7 +1596,11 @@ def load_conf():
 
 def main():
     conf = load_conf()
-    pepper = conf.get("SESSION_PEPPER") or secrets.token_hex(32)
+    pepper = conf.get("SESSION_PEPPER") or ""
+    # Never silently rotate a password pepper at restart; that would break
+    # all existing logins and create an untraceable recovery incident.
+    if len(pepper) < 32 or pepper.startswith("replace-"):
+        raise SystemExit("SESSION_PEPPER_NOT_CONFIGURED")
     mailer = Mailer(conf)
     store = Store(conf.get("AMANIKAH_DB", "/data/amanikah.sqlite"), pepper, mailer, conf)
     Handler.store = store
@@ -1336,8 +1608,8 @@ def main():
     Handler.private_features = store.private_features
     Handler.al_wali = AlWali(conf)
     Handler.admin_token = conf.get("OPS_ADMIN_TOKEN") or ""
-    if not Handler.admin_token:
-        raise SystemExit("OPS_ADMIN_TOKEN is required")
+    if len(Handler.admin_token) < 20 or Handler.admin_token.startswith("replace-"):
+        raise SystemExit("OPS_ADMIN_TOKEN_NOT_CONFIGURED")
     host = conf.get("BIND", "0.0.0.0")
     port = int(conf.get("PORT", "8090"))
     server = ThreadingHTTPServer((host, port), Handler)

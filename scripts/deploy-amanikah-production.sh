@@ -23,6 +23,21 @@ if [[ "$MAIL_SKIP" != "1" ]]; then
   fi
 else
   echo "WARNING: AMANIKAH_ALLOW_MAIL_SKIP=1 — deploying without transactional email smoke test"
+  if grep -Eq '^MATCHMAKING_LIVE=1([[:space:]]*$|#)' "$ENV_FILE"; then
+    echo "MATCHMAKING_BLOCKED_WITHOUT_VERIFIED_SIGNUP"
+    exit 1
+  fi
+  if grep -Eq '^AMANIKAH_ALLOW_OPERATOR_VERIFICATION=1([[:space:]]*$|#)' "$ENV_FILE"; then
+    echo "UNSAFE_OPERATOR_VERIFICATION_OVERRIDE"
+    exit 1
+  fi
+fi
+# No automated go-live based merely on a deploy flag. Operator must affirm
+# separate safeguarding, compliance, staffing, consent QA and restore readiness.
+if grep -Eq '^MATCHMAKING_LIVE=1([[:space:]]*$|#)' "$ENV_FILE"; then
+  for gate in AMANIKAH_SAFETY_REVIEW_APPROVED AMANIKAH_OFFSITE_RESTORE_VERIFIED AMANIKAH_REAL_ACCOUNT_QA_APPROVED; do
+    grep -Eq "^$gate=1([[:space:]]*$|#)" "$ENV_FILE" || { echo "MATCHMAKING_LAUNCH_GATE_MISSING_$gate"; exit 1; }
+  done
 fi
 [[ -d "$SITE_DIR" ]] || { echo SITE_DIR_MISSING; exit 1; }
 command -v rsync >/dev/null
