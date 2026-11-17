@@ -36,6 +36,8 @@ class Integration(unittest.TestCase):
             PUBLIC_BASE_URL=cls.base,
             AMANIKAH_AI_ENABLED="0",
             OPERATOR_EMAIL="")
+        cls.env.pop("GROQ_API_KEY", None)
+        cls.env["AMANIKAH_WALI_AI_ENABLED"] = "0"
         cls.process = subprocess.Popen([sys.executable, "-u", str(API_ROOT/"server.py")],
              env=cls.env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         for _ in range(80):
@@ -94,6 +96,21 @@ class Integration(unittest.TestCase):
         code,logged=cls.request("POST","/auth/login",data={"email":email,"password":"secure-test-password-1"})
         assert code==200,(code,logged)
         return mid,logged["token"]
+
+    def test_public_al_wali_guidance_is_available_without_groq_key(self):
+        status, body = self.request("GET", "/al-wali/status")
+        self.assertEqual(status, 200)
+        self.assertTrue(body["guidedAvailable"])
+        self.assertFalse(body["aiAvailable"])
+        status, response = self.request("POST", "/al-wali/chat", {
+            "question": "How should we talk about mahr?", "language": "en",
+            "consentToAI": True})
+        self.assertEqual(status, 200)
+        self.assertEqual(response["mode"], "guided")
+        self.assertEqual(response["nextStep"]["path"], "/nikah-readiness/")
+        bad, response = self.request("POST", "/al-wali/chat",
+            {"question": "x" * 601, "language": "en"})
+        self.assertEqual(bad, 400)
 
     def test_wali_http_privacy_scope_and_delete(self):
         owner, ot = self.registered("ci-wali-owner@example.test")
