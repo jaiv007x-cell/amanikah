@@ -45,7 +45,7 @@
     '  <p id="alWaliStatus" class="al-wali-status" role="status" aria-live="polite"></p>',
     ' </div>',
     '</section>',
-    '<button type="button" class="al-wali-launch" id="alWaliOpen" aria-controls="alWaliPanel" aria-expanded="false" aria-label="Open Al Wali marriage guide">',
+    '<button type="button" class="al-wali-launch" id="alWaliOpen" aria-controls="alWaliPanel" aria-expanded="false" aria-label="Ask Al Wali: open marriage guide">',
     ' <span class="al-wali-launch-mark" aria-hidden="true">☪</span><span>Ask Al Wali</span>',
     '</button>'
   ].join("");
