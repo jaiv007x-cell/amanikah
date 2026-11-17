@@ -1,0 +1,76 @@
+name: Verify live Al Wali and private account UX (one-time)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/check-al-wali-live-20261117.yml'
+permissions:
+  contents: read
+jobs:
+  public-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Check production API, privacy, and live Al Wali assets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          BASE=https://amanikah.com
+          curl -fsS --max-time 20 "$BASE/api/amanikah/health" -o /tmp/health.json
+          curl -fsS --max-time 20 "$BASE/api/amanikah/al-wali/status" -o /tmp/wali.json
+          curl -fsS --max-time 20 "$BASE/api/amanikah/al-wali/chat" -o /tmp/answer.json \
+            -H 'Content-Type: application/json' \
+            -d '{"question":"How should we discuss mahr before nikah?","language":"en","consentToAI":false}'
+          python3 - <<'PY'
+          import json
+          h=json.load(open('/tmp/health.json'))
+          status=json.load(open('/tmp/wali.json'))
+          answer=json.load(open('/tmp/answer.json'))
+          assert h['ok'] and h['waitlistMode'] is True and h['matchmakingLive'] is False
+          assert status['ok'] and status['guidedAvailable'] is True
+          assert isinstance(status['aiAvailable'],bool)
+          assert answer['ok'] and answer['mode']=='guided'
+          assert 'mahr' in answer['answer'].lower()
+          assert answer['nextStep']['path']=='/nikah-readiness/'
+          assert 'GROQ_API_KEY' not in str(status) and 'gsk_' not in str(status)
+          print('PASS live Al Wali guided response; Groq configured='+str(status['aiAvailable']))
+          print('PASS waitlist only and private provider credentials not exposed')
+          PY
+          for path in /api/amanikah/me/family/brief /api/amanikah/me/voice /api/amanikah/ops/dashboard; do
+            code=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "$BASE$path")
+            [[ "$code" == 401 ]] || { echo "FAIL privacy route $path returned $code"; exit 1; }
+          done
+          echo 'PASS private member and operator routes are unauthorized without credentials'
+          for path in / /signup.html /family-guide/ /nikah-readiness/ /account/ /account/family.html; do
+            curl -fsS --max-time 20 "$BASE$path" | grep -q '/js/al-wali.js?v=1'
+          done
+          echo 'PASS Al Wali script linked across homepage, free guides and private account pages'
+          curl -fsS --max-time 20 "$BASE/js/al-wali.js?v=1" -o /tmp/al-wali.js
+          curl -fsS --max-time 20 "$BASE/css/al-wali.css?v=1" -o /tmp/al-wali.css
+          grep -q 'id="alWaliOpen"' /tmp/al-wali.js
+          grep -q 'al-wali-panel' /tmp/al-wali.css
+          ! grep -q 'GROQ_API_KEY' /tmp/al-wali.js
+          curl -fsS --max-time 20 "$BASE/js/account.js" -o /tmp/account.js
+          grep -q 'function updateJourney' /tmp/account.js
+          echo 'PASS Al Wali assets and private member journey code publicly available'
+  api-container:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 5
+    env:
+      AMANIKAH_VPS_HOST: ${{ secrets.AMANIKAH_VPS_HOST }}
+      AMANIKAH_VPS_USER: ${{ secrets.AMANIKAH_VPS_USER }}
+      AMANIKAH_VPS_KEY: ${{ secrets.AMANIKAH_VPS_KEY }}
+      AMANIKAH_SSH_KNOWN_HOSTS: ${{ secrets.AMANIKAH_SSH_KNOWN_HOSTS }}
+    steps:
+      - name: Read-only check of mounted Al Wali Python module
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$AMANIKAH_VPS_KEY" > ~/.ssh/id_deploy
+          printf '%s\n' "$AMANIKAH_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_deploy ~/.ssh/known_hosts
+          REMOTE="$AMANIKAH_VPS_USER@$AMANIKAH_VPS_HOST"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i ~/.ssh/id_deploy "$REMOTE" \
+            'if [ "$(id -u)" -eq 0 ]; then test -s /root/amanikah-api/al_wali.py && docker exec amanikah-api python -c "import al_wali; print(\"PASS mounted Al Wali backend\")"; else sudo -n test -s /root/amanikah-api/al_wali.py && sudo -n docker exec amanikah-api python -c "import al_wali; print(\"PASS mounted Al Wali backend\")"; fi'
