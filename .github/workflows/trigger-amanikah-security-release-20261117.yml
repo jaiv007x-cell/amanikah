@@ -1,0 +1,28 @@
+name: One-time protected Amanikah security release request
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/trigger-amanikah-security-release-20261117.yml'
+permissions:
+  actions: write
+  contents: read
+jobs:
+  request:
+    if: github.repository == 'jaiv007x-cell/amanikah' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch the existing protected VPS release with authorized email skip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          curl --fail-with-body --silent --show-error --request POST \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --header "Content-Type: application/json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/manual-vps-release.yml/dispatches" \
+            --data '{"ref":"main","inputs":{"confirmation":"DEPLOY","allow_mail_skip":true}}'
+          echo "Protected release dispatched; no gate bypass beyond previously authorized mail skip."
