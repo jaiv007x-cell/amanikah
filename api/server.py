@@ -268,6 +268,15 @@ class Store:
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS introduction_consents (
+              case_id TEXT NOT NULL,
+              member_id TEXT NOT NULL,
+              decision TEXT NOT NULL CHECK(decision IN ('accepted','declined')),
+              created_at TEXT NOT NULL,
+              PRIMARY KEY(case_id, member_id),
+              FOREIGN KEY(case_id) REFERENCES introduction_cases(id),
+              FOREIGN KEY(member_id) REFERENCES members(id)
+            );
             CREATE TABLE IF NOT EXISTS verification_requests (
               id TEXT PRIMARY KEY,
               reference TEXT UNIQUE NOT NULL,
@@ -331,6 +340,10 @@ class Store:
             CREATE INDEX IF NOT EXISTS idx_shares_kind ON shares(kind);
             """
         )
+        # Additive migration for older production databases (no data loss).
+        columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(introduction_cases)")}
+        if "peer_member_id" not in columns:
+            self.conn.execute("ALTER TABLE introduction_cases ADD COLUMN peer_member_id TEXT")
         self.conn.commit()
 
     def audit(self, action, actor=None, entity_type=None, entity_id=None, detail=None):
@@ -695,6 +708,7 @@ class Store:
     def withdraw_consent(self, member_id):
         if hasattr(self, "private_features"):
             self.private_features.purge_member(member_id)
+        self._pause_member_introductions(member_id)
         self.conn.execute("UPDATE consents SET withdrawn=1, updated_at=? WHERE member_id=?", (utcnow(), member_id))
         self.conn.execute("UPDATE profiles SET visibility='private' WHERE member_id=?", (member_id,))
         # Withdrawing consent also immediately invalidates all active sessions.
@@ -706,6 +720,7 @@ class Store:
     def delete_account(self, member_id):
         if hasattr(self, "private_features"):
             self.private_features.purge_member(member_id)
+        self._pause_member_introductions(member_id)
         now = utcnow()
         self.conn.execute("UPDATE members SET deleted_at=?, email=?, password_hash='', updated_at=? WHERE id=?", (now, f"deleted-{member_id}@amanikah.invalid", now, member_id))
         self.conn.execute("UPDATE profiles SET display_name='Deleted member', intentions='', city='', visibility='private' WHERE member_id=?", (member_id,))
@@ -860,23 +875,144 @@ class Store:
         self.audit("ticket_status", actor="operator", entity_type="ticket", entity_id=ticket_id, detail=status)
         return 200, {"ok": True, "id": ticket_id, "status": status}
 
+    def _eligible_intro_member(self, member_id):
+        if not member_id or not isinstance(member_id, str):
+            return False
+        row = self.conn.execute("""
+            SELECT 1 FROM members m JOIN consents c ON c.member_id=m.id
+            JOIN profiles p ON p.member_id=m.id
+            WHERE m.id=? AND m.deleted_at IS NULL AND m.email_verified=1
+            AND m.is_demo=0 AND c.terms=1 AND c.privacy=1 AND c.withdrawn=0
+            AND p.age>=21
+            """, (member_id,)).fetchone()
+        return bool(row)
+
+    def _pause_member_introductions(self, member_id):
+        # This is called before account/consent deletion. Stop invitations
+        # immediately; never reuse a previously accepted response.
+        self.conn.execute("""
+            UPDATE introduction_cases SET status='paused', updated_at=?
+            WHERE status IN ('open','mutual','draft')
+              AND (member_id=? OR peer_member_id=?)""",
+            (utcnow(), member_id, member_id))
+        self.conn.execute("""
+            DELETE FROM introduction_consents WHERE member_id=?
+            OR case_id IN (SELECT id FROM introduction_cases
+                           WHERE member_id=? OR peer_member_id=?)
+            """, (member_id, member_id, member_id))
+
     def ops_create_case(self, body):
-        cid = new_id("case")
-        reference = "IC-" + secrets.token_hex(3).upper()
-        now = utcnow()
-        self.conn.execute(
-            "INSERT INTO introduction_cases (id, reference, lead_id, member_id, peer_label, status, notes, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
-            (cid, reference, body.get("leadId"), body.get("memberId"), str(body.get("peerLabel") or "")[:80], "open", str(body.get("notes") or "")[:1000], now, now),
-        )
-        self.conn.commit()
-        return 201, {"ok": True, "case": {"id": cid, "reference": reference, "status": "open"}}
+        if not isinstance(body, dict):
+            return 400, {"ok": False, "code": "BAD_REQUEST"}
+        first = body.get("memberId")
+        second = body.get("peerMemberId")
+        if bool(first) != bool(second):
+            return 400, {"ok": False, "code": "BOTH_ADULTS_REQUIRED"}
+        if first:
+            if first == second or not all(self._eligible_intro_member(mid) for mid in (first, second)):
+                return 403, {"ok": False, "code": "ELIGIBLE_ADULTS_REQUIRED"}
+            if (hasattr(self,"private_features") and self.private_features.is_blocked(first, second)):
+                return 403, {"ok": False, "code": "BLOCKED"}
+        # An operator-created record is only a draft; never implied consent.
+        with self.lock:
+            cid = new_id("case")
+            reference = "IC-" + secrets.token_hex(3).upper()
+            now = utcnow()
+            self.conn.execute("""
+                INSERT INTO introduction_cases
+                (id,reference,lead_id,member_id,peer_member_id,peer_label,status,notes,created_at,updated_at)
+                VALUES(?,?,?,?,?,?,'draft',?,?,?)""",
+                (cid, reference, body.get("leadId"), first, second,
+                 str(body.get("peerLabel") or "")[:80],
+                 str(body.get("notes") or "")[:1000], now, now))
+            self.conn.commit()
+        self.audit("introduction_draft_created", actor="operator", entity_type="introduction", entity_id=cid)
+        return 201, {"ok": True, "case": {"id": cid, "reference": reference, "status": "draft"}}
+
+    def _intro_pair(self, row):
+        return row and row["member_id"] and row["peer_member_id"] and (
+            row["member_id"] != row["peer_member_id"]) and all(
+            self._eligible_intro_member(x) for x in (row["member_id"],row["peer_member_id"])) and (
+            not hasattr(self,"private_features") or
+            not self.private_features.is_blocked(row["member_id"],row["peer_member_id"]))
 
     def ops_set_case_status(self, case_id, status):
         if status not in CASE_STATUSES:
             return 400, {"ok": False, "code": "INVALID_STATUS"}
-        self.conn.execute("UPDATE introduction_cases SET status=?, updated_at=? WHERE id=?", (status, utcnow(), case_id))
-        self.conn.commit()
+        with self.lock:
+            row = self.conn.execute("SELECT * FROM introduction_cases WHERE id=?", (case_id,)).fetchone()
+            if not row:
+                return 404, {"ok": False, "code": "NOT_FOUND"}
+            old = row["status"]
+            if status in ("open", "mutual"):
+                if self.conf.get("MATCHMAKING_LIVE") != "1":
+                    return 409, {"ok": False, "code": "MATCHMAKING_NOT_LIVE"}
+                if not self._intro_pair(row):
+                    return 403, {"ok": False, "code": "TWO_VERIFIED_ADULTS_REQUIRED"}
+            if status == "open" and old not in ("draft", "open"):
+                return 409, {"ok": False, "code": "INVALID_TRANSITION"}
+            if status == "mutual":
+                if old not in ("open", "mutual"):
+                    return 409, {"ok": False, "code": "INVALID_TRANSITION"}
+                decisions = self.conn.execute("""
+                    SELECT member_id FROM introduction_consents
+                    WHERE case_id=? AND decision='accepted' """, (case_id,)).fetchall()
+                if {r["member_id"] for r in decisions} != {row["member_id"], row["peer_member_id"]}:
+                    return 409, {"ok": False, "code": "BOTH_ADULTS_MUST_ACCEPT"}
+            if status == "draft" and old != "draft":
+                return 409, {"ok": False, "code": "INVALID_TRANSITION"}
+            if old in ("closed", "paused") and status not in ("closed", "paused"):
+                return 409, {"ok": False, "code": "NEW_INTRODUCTION_REQUIRED"}
+            self.conn.execute("UPDATE introduction_cases SET status=?, updated_at=? WHERE id=?",
+                              (status, utcnow(), case_id))
+            self.conn.commit()
+        self.audit("introduction_status", actor="operator", entity_type="introduction", entity_id=case_id, detail=status)
         return 200, {"ok": True, "id": case_id, "status": status}
+
+    def list_member_introductions(self, member_id):
+        if self.conf.get("MATCHMAKING_LIVE") != "1":
+            return 409, {"ok": False, "code": "MATCHMAKING_NOT_LIVE"}
+        if not self._eligible_intro_member(member_id):
+            return 403, {"ok": False, "code": "INELIGIBLE"}
+        rows = self.conn.execute("""
+            SELECT i.id,i.reference,i.status,i.created_at,c.decision
+            FROM introduction_cases i LEFT JOIN introduction_consents c
+            ON c.case_id=i.id AND c.member_id=?
+            WHERE (i.member_id=? OR i.peer_member_id=?)
+            AND i.status IN ('open','mutual')
+            ORDER BY i.created_at DESC LIMIT 30""",
+            (member_id, member_id, member_id)).fetchall()
+        # Neither peer identity, profile, location, nor operator notes is
+        # exposed before a separately reviewed release of an introduction.
+        return 200, {"ok": True, "introductions": [{
+            "id":row["id"],"reference":row["reference"],"status":row["status"],
+            "myDecision":row["decision"],"createdAt":row["created_at"]
+        } for row in rows]}
+
+    def respond_member_introduction(self, member_id, case_id, body):
+        if self.conf.get("MATCHMAKING_LIVE") != "1":
+            return 409, {"ok": False, "code": "MATCHMAKING_NOT_LIVE"}
+        if not isinstance(body, dict) or body.get("decision") not in ("accept", "decline"):
+            return 400, {"ok": False, "code": "VALIDATION"}
+        with self.lock:
+            row = self.conn.execute("SELECT * FROM introduction_cases WHERE id=?", (case_id,)).fetchone()
+            if not row or member_id not in (row["member_id"],row["peer_member_id"]):
+                return 404, {"ok": False, "code": "NOT_FOUND"}
+            if row["status"] not in ("open", "mutual") or not self._intro_pair(row):
+                return 409, {"ok": False, "code": "INTRODUCTION_UNAVAILABLE"}
+            decision = "accepted" if body["decision"] == "accept" else "declined"
+            self.conn.execute("""
+                INSERT INTO introduction_consents(case_id,member_id,decision,created_at)
+                VALUES(?,?,?,?)
+                ON CONFLICT(case_id,member_id) DO UPDATE SET
+                  decision=excluded.decision, created_at=excluded.created_at
+                """, (case_id,member_id,decision,utcnow()))
+            if decision == "declined":
+                self.conn.execute("UPDATE introduction_cases SET status='paused',updated_at=? WHERE id=?",
+                                  (utcnow(),case_id))
+            self.conn.commit()
+        self.audit("introduction_response", actor=member_id, entity_type="introduction",entity_id=case_id, detail=decision)
+        return 200, {"ok": True, "myDecision": decision, "status": "paused" if decision=="declined" else row["status"]}
 
     def ops_create_verification(self, body):
         vid = new_id("ver")
@@ -1238,6 +1374,22 @@ class Handler(BaseHTTPRequestHandler):
             token = (qs.get("token") or [None])[0]
             status, payload = store.verify_email(str(token or ""))
             return self._send(status, payload, write_body)
+
+        if method == "GET" and path == "/api/amanikah/me/introductions":
+            member = store.session_member(self._bearer())
+            if not member:
+                return self._send(401, {"ok":False,"code":"UNAUTHENTICATED"}, write_body)
+            return self._send(*store.list_member_introductions(member["id"]), write_body)
+
+        if method == "POST" and path.startswith("/api/amanikah/me/introductions/") and path.endswith("/respond"):
+            member = store.session_member(self._bearer())
+            if not member:
+                return self._send(401, {"ok":False,"code":"UNAUTHENTICATED"}, write_body)
+            case_id = path[len("/api/amanikah/me/introductions/"):-len("/respond")].strip("/")
+            if not re.fullmatch(r"case_[a-f0-9]{16}", case_id):
+                return self._send(404, {"ok":False,"code":"NOT_FOUND"}, write_body)
+            return self._send(*store.respond_member_introduction(
+                member["id"],case_id,self._json()), write_body)
 
         if method == "GET" and path == "/api/amanikah/me":
             member = store.session_member(self._bearer())
