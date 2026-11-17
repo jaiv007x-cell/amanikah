@@ -238,3 +238,100 @@ test('community pilot makes no endorsement or fundraising claims and stores a fa
   await expect(family.locator('.status')).toContainText('SUP-TEST-001');
   await expect(family.locator('.status')).toContainText('not a matchmaking registration');
 });
+
+test('Al Wali opens as a small accessible floatie and keeps provider off by default', async ({page}) => {
+  await page.route('**/api/amanikah/al-wali/status', async route => {
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({ok:true,guidedAvailable:true,aiAvailable:false})});
+  });
+  await page.route('**/api/amanikah/al-wali/chat', async route => {
+    const payload=route.request().postDataJSON();
+    expect(payload.consentToAI).toBe(false);
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({ok:true,mode:'guided',answer:'Discuss family expectations with kindness.',
+        nextStep:{label:'Begin a family conversation',path:'/family-guide/'}})});
+  });
+  await page.goto(base+'/');
+  await expect(page.locator('#alWaliOpen')).toBeVisible();
+  await expect(page.locator('#alWaliPanel')).toBeHidden();
+  await page.locator('#alWaliOpen').click();
+  await expect(page.locator('#alWaliPanel')).toBeVisible();
+  await expect(page.locator('#alWaliConsent')).toBeDisabled();
+  await page.locator('.al-wali-chip').nth(1).click();
+  await expect(page.locator('#alWaliLog')).toContainText('Discuss family expectations with kindness.');
+  await expect(page.locator('#alWaliLog a[href="/family-guide/"]')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#alWaliPanel')).toBeHidden();
+  await expect(page.locator('#alWaliOpen')).toBeFocused();
+});
+
+test('Al Wali optional AI requires a deliberate choice and never renders answer HTML', async ({page}) => {
+  let networkCount=0;
+  await page.route('**/api/amanikah/al-wali/status', async route => {
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({ok:true,guidedAvailable:true,aiAvailable:true})});
+  });
+  await page.route('**/api/amanikah/al-wali/chat', async route => {
+    networkCount+=1;
+    const data=route.request().postDataJSON();
+    expect(data.consentToAI).toBe(networkCount>1);
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({ok:true,mode:networkCount>1?'ai':'guided',
+        answer:'<img src=x onerror="window.__awXss=1"> Only your choices matter.',
+        nextStep:{label:'Your free guide',path:'/nikah-readiness/'}})});
+  });
+  await page.goto(base+'/signup.html');
+  await page.locator('#alWaliOpen').click();
+  await expect(page.locator('#alWaliConsent')).toBeEnabled();
+  await page.locator('#alWaliInput').fill('How do I prepare for nikah?');
+  await page.locator('#alWaliSend').click();
+  await expect(page.locator('#alWaliLog')).toContainText('Only your choices matter.');
+  await page.locator('#alWaliConsent').check();
+  await page.locator('#alWaliInput').fill('What should I ask about values?');
+  await page.locator('#alWaliSend').click();
+  await expect.poll(()=>networkCount).toBe(2);
+  await expect(page.locator('#alWaliLog img')).toHaveCount(0);
+  expect(await page.evaluate(()=>Boolean(window.__awXss))).toBe(false);
+  await page.locator('#alWaliClear').click();
+  await expect(page.locator('#alWaliLog')).toBeEmpty();
+});
+
+test('Al Wali stays within the mobile viewport and persists only optional checklist marks', async ({page}) => {
+  await page.setViewportSize({width:320,height:620});
+  await page.route('**/api/amanikah/al-wali/status', async route =>
+    route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({ok:true,aiAvailable:false,guidedAvailable:true})}));
+  await page.goto(base+'/');
+  await page.locator('#alWaliOpen').click();
+  const frame=await page.locator('#alWaliPanel').boundingBox();
+  expect(frame.x).toBeGreaterThanOrEqual(0);
+  expect(frame.x+frame.width).toBeLessThanOrEqual(321);
+  expect(frame.y+frame.height).toBeLessThanOrEqual(621);
+  await page.locator('#alWaliProgress summary').click();
+  await page.locator('[data-aw-step="priorities"]').check();
+  await expect(page.locator('#alWaliProgressTitle')).toContainText('1 of 3');
+  expect(await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.includes('alwali'))))
+    .toEqual(['amanikah.alwali.journey.v1']);
+  await page.locator('#alWaliClose').click();
+  await page.reload();
+  await page.locator('#alWaliOpen').click();
+  await expect(page.locator('[data-aw-step="priorities"]')).toBeChecked();
+});
+
+test('signed-in account displays a private profile preview, not a compatibility score', async ({page}) => {
+  await page.addInitScript(() => sessionStorage.setItem('amanikah.session','ci-fake-session'));
+  await page.route('**/api/amanikah/me', async route => route.fulfill({
+    status:200, contentType:'application/json',
+    body:JSON.stringify({ok:true,member:{id:'ci-user',email:'example@example.test',
+      emailVerified:true,role:'member',consent:{withdrawn:false},
+      profile:{display_name:'A test member',city:'',jurisdiction:'',intentions:''}}})
+  }));
+  await page.goto(base+'/account/');
+  await expect(page.locator('#panel')).toBeVisible();
+  await expect(page.locator('#journeyCount')).toContainText('1 of 4');
+  await page.locator('#city').fill('Hyderabad');
+  await page.locator('#intentions').fill('A home filled with kindness.');
+  await expect(page.locator('#journeyCount')).toContainText('3 of 4');
+  await expect(page.locator('#journeyPreview')).toContainText('A home filled with kindness.');
+  await expect(page.locator('#journeyCard')).toContainText('not a compatibility score');
+});
