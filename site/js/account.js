@@ -166,7 +166,16 @@
   });
 
   document.getElementById("logout").addEventListener("click", function () {
-    try { sessionStorage.removeItem("amanikah.session"); } catch (err) {}
-    window.location.href = "/account/login.html";
+    status.textContent = "Signing out securely…";
+    AmanikahPlatform.api("/auth/logout", { method: "POST", body: {} }).then(function(r) {
+      if (!r.body || !r.body.ok) {
+        status.textContent = "Unable to confirm server logout. Please try again.";
+        return;
+      }
+      try { sessionStorage.removeItem("amanikah.session"); } catch (err) {}
+      window.location.href = "/account/login.html";
+    }).catch(function() {
+      status.textContent = "Network error: server logout could not be confirmed. Please try again.";
+    });
   });
 })();
