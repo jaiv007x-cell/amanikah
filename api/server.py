@@ -580,7 +580,7 @@ class Store:
         )
         self.conn.commit()
         self.audit("member_registered", actor=email, entity_type="member", entity_id=mid)
-        verify_url = f"{self.conf.get('PUBLIC_BASE_URL')}/account/verify.html?token={token}"
+        verify_url = f"{self.conf.get('PUBLIC_BASE_URL')}/account/verify.html#token={token}"
         # Attempt member-facing verification email when mail works
         member_mail = {"sent": False, "ok": False}
         if self.mailer.configured:
@@ -625,7 +625,7 @@ class Store:
             (hashlib.sha256(token.encode()).hexdigest(), member_id, "verify", (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()),
         )
         self.conn.commit()
-        verify_url = f"{self.conf.get('PUBLIC_BASE_URL')}/account/verify.html?token={token}"
+        verify_url = f"{self.conf.get('PUBLIC_BASE_URL')}/account/verify.html#token={token}"
         self.audit("verify_link_issued", actor="ops", entity_type="member", entity_id=member_id)
         return 200, {"ok": True, "memberId": member_id, "verifyUrl": verify_url}
 
