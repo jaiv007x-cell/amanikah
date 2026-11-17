@@ -17,7 +17,7 @@
 <script src="/js/platform.js"></script>
 <script>
 (function () {
-  var token = AmanikahPlatform.qs("token");
+  var token = new URLSearchParams(location.hash.slice(1)).get("token") || AmanikahPlatform.qs("token");
   // Remove the one-use secret from browser history and from links/referrers.
   if (token) history.replaceState(null, "", location.pathname);
   var status = document.getElementById("status");
