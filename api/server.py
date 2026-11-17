@@ -1596,7 +1596,11 @@ def load_conf():
 
 def main():
     conf = load_conf()
-    pepper = conf.get("SESSION_PEPPER") or secrets.token_hex(32)
+    pepper = conf.get("SESSION_PEPPER") or ""
+    # Never silently rotate a password pepper at restart; that would break
+    # all existing logins and create an untraceable recovery incident.
+    if len(pepper) < 32 or pepper.startswith("replace-"):
+        raise SystemExit("SESSION_PEPPER_NOT_CONFIGURED")
     mailer = Mailer(conf)
     store = Store(conf.get("AMANIKAH_DB", "/data/amanikah.sqlite"), pepper, mailer, conf)
     Handler.store = store
@@ -1604,8 +1608,8 @@ def main():
     Handler.private_features = store.private_features
     Handler.al_wali = AlWali(conf)
     Handler.admin_token = conf.get("OPS_ADMIN_TOKEN") or ""
-    if not Handler.admin_token:
-        raise SystemExit("OPS_ADMIN_TOKEN is required")
+    if len(Handler.admin_token) < 20 or Handler.admin_token.startswith("replace-"):
+        raise SystemExit("OPS_ADMIN_TOKEN_NOT_CONFIGURED")
     host = conf.get("BIND", "0.0.0.0")
     port = int(conf.get("PORT", "8090"))
     server = ThreadingHTTPServer((host, port), Handler)
