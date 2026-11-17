@@ -30,7 +30,7 @@ class Integration(unittest.TestCase):
         cls.env = dict(os.environ,
             BIND="127.0.0.1", PORT=str(cls.port),
             OPS_ADMIN_TOKEN=cls.admin,
-            SESSION_PEPPER="ci-pepper-not-for-production",
+            SESSION_PEPPER="ci-only-pepper-ci-only-pepper-ci-only-pepper-ci-only-pepper-",
             AMANIKAH_DB=str(Path(cls.tmp.name)/"test.sqlite"),
             VOICE_PRIVATE_DIR=str(Path(cls.tmp.name)/"private"),
             PUBLIC_BASE_URL=cls.base,
