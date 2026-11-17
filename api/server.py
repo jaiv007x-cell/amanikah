@@ -169,7 +169,6 @@ class Store:
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA foreign_keys=ON")
             conn.execute("PRAGMA busy_timeout=15000")
-            conn.execute("PRAGMA journal_mode=WAL")
             self._thread.conn = conn
         return conn
 
@@ -180,6 +179,7 @@ class Store:
             del self._thread.conn
 
     def _migrate(self):
+        self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS leads (
@@ -826,7 +826,7 @@ class Store:
             if (key in allowed_props and isinstance(val, (str, int))
                     and len(str(val)) <= 80
                     and not EMAIL_RE.search(str(val))
-                    and not re.search(r"\\b\\+?\\d[\\d .()\\-]{8,}\\d\\b", str(val))):
+                    and not re.search(r"\+?\d[\d .()\-]{8,}\d", str(val))):
                 safe[key] = val
         self.conn.execute(
             "INSERT INTO analytics_events (id, name, props, created_at) VALUES (?,?,?,?)",
