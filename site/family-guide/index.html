@@ -68,4 +68,5 @@ var output=document.getElementById("output"),lang=document.getElementById("langu
 document.getElementById("generate").addEventListener("click",function(){var list=data[lang.value][topic.value];output.textContent=list.map(function(x,i){return (i+1)+". "+x}).join("\n\n");output.dir=lang.value==="ur"?"rtl":"ltr";copy.disabled=false;status.textContent=""});
 copy.addEventListener("click",function(){if(copy.disabled)return;var content=output.textContent;navigator.clipboard.writeText(content).then(function(){status.textContent="Copied to clipboard."}).catch(function(){status.textContent="Clipboard unavailable. Select and copy the text manually."})});
 })();
-</script></body></html>
+</script> <script src="/js/al-wali.js?v=1" defer></script>
+</body></html>
