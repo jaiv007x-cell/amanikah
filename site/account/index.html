@@ -7,6 +7,18 @@
 <title>Member account — Amanikah</title>
 <link rel="stylesheet" href="/css/site.css?v=5">
 <link rel="stylesheet" href="/css/clarity-2026.css?v=1">
+<style>
+.member-journey{border:1px solid #d9c9a7;background:linear-gradient(135deg,#fffdf6,#f4f7f2);border-radius:18px;padding:21px 23px;margin:17px 0 22px}
+.member-journey h2{font-size:clamp(1.65rem,3vw,2.25rem);line-height:1.13;margin:6px 0}
+.member-journey p{margin:8px 0;color:#365749}
+.member-journey-progress{height:10px;background:#dfebe3;border-radius:99px;overflow:hidden;margin:15px 0}
+.member-journey-progress span{height:100%;background:#0e654d;display:block;width:0;transition:width .2s}
+.member-journey-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;margin:12px 0;padding-left:19px}
+.member-journey-preview{background:#fff;border:1px solid #d9e5dc;border-radius:12px;padding:15px;white-space:pre-wrap;color:#254c3c}
+.member-journey .row{display:flex;gap:10px;flex-wrap:wrap}
+@media(max-width:480px){.member-journey{padding:16px}.member-journey-checks{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.member-journey-progress span{transition:none}}
+</style>
 </head>
 <body class="no-dock">
 <a class="skip" href="#main">Skip to content</a>
@@ -26,6 +38,22 @@
   <p>Your profile, preferences and family invitations remain under your control. Share only what you choose.</p>
   <p class="status" id="status" role="status">Checking session…</p>
   <div id="panel" class="panel" hidden>
+    <section class="member-journey" id="journeyCard" aria-labelledby="journeyTitle">
+      <p class="kicker">Your private journey</p>
+      <h2 id="journeyTitle">Your story, in your own words.</h2>
+      <p id="journeyCount" aria-live="polite">0 of 4 profile details prepared</p>
+      <div class="member-journey-progress" id="journeyProgress" role="progressbar" aria-label="Profile details prepared" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0"><span id="journeyFill"></span></div>
+      <ul class="member-journey-checks" id="journeyChecklist">
+        <li>Display name</li><li>City</li><li>Country or region</li><li>Your marriage intentions</li>
+      </ul>
+      <p><strong>Private preview</strong> · Only you see this draft. Changes are not saved until you select Save profile.</p>
+      <div id="journeyPreview" class="member-journey-preview" aria-live="polite">Your introduction will appear here as you write.</div>
+      <div class="row" style="margin-top:13px">
+        <a class="btn btn-ghost" href="/nikah-readiness/">Explore my Nikah priorities</a>
+        <a class="btn btn-ghost" href="/account/family.html">My family &amp; Wali Brief</a>
+      </div>
+      <p style="font-size:13px">This is a preparation checklist, not a compatibility score or verification badge.</p>
+    </section>
     <ul class="summary" id="summary"></ul>
     <form id="profile" style="margin-top:16px">
       <div class="field"><label for="displayName">Display name</label><input id="displayName" name="displayName" required></div>
